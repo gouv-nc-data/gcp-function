@@ -81,7 +81,7 @@ class GcpFunction(Construct):
                                             type=VariableType.NUMBER
                                             )
 
-        if image.value is not None:
+        if image.value is None:
             local_image = "${" + region.value + "}-docker.pkg.dev/${" + project_id.value + "}/${" + project_name.value + "}/${" + project_name.value + "}-function:latest"
         else:
             local_image = image.value

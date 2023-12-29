@@ -1,0 +1,13 @@
+{
+  "version": "0.19.2",
+  "stacks": {
+    "gcp-function": {
+      "name": "gcp-function",
+      "constructPath": "gcp-function",
+      "workingDirectory": "stacks/gcp-function",
+      "synthesizedStackPath": "stacks/gcp-function/cdk.tf.json",
+      "annotations": [],
+      "dependencies": []
+    }
+  }
+}

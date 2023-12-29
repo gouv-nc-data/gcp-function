@@ -1,0 +1,586 @@
+{
+  "//": {
+    "metadata": {
+      "backend": "local",
+      "stackName": "gcp-function",
+      "version": "0.19.2"
+    },
+    "outputs": {
+      "gcp-function": {
+        "run_url": "run_url"
+      }
+    }
+  },
+  "module": {
+    "google_cloud_run": {
+      "//": {
+        "metadata": {
+          "path": "gcp-function/google_cloud_run",
+          "uniqueId": "google_cloud_run"
+        }
+      },
+      "containers": [
+        {
+          "${var.project_name}": [
+            {
+              "env": "${var.env}",
+              "image": "${var.image}",
+              "resources": [
+                {
+                  "limits": [
+                    {
+                      "cpu": "${var.cpu_limits}",
+                      "memory": "${var.memory_limits}"
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "ingress_settings": "internal-and-cloud-load-balancing",
+      "name": "cloudrun-${var.project_name}-${var.project_id}",
+      "project_id": "${var.project_id}",
+      "region": "${var.region}",
+      "service_account": "${google_service_account.service_account.email}",
+      "source": "git::https://github.com/GoogleCloudPlatform/cloud-foundation-fabric//modules/cloud-run?ref=v26.0.0",
+      "timeout_seconds": "${var.timeout_seconds}"
+    }
+  },
+  "output": {
+    "run_url": [
+      {
+        "value": "${module.google_cloud_run.service.status[\"0\"].url}"
+      }
+    ]
+  },
+  "resource": {
+    "github_actions_secret": {
+      "gcp_credentials_secret": {
+        "//": {
+          "metadata": {
+            "path": "gcp-function/gcp_credentials_secret",
+            "uniqueId": "gcp_credentials_secret"
+          }
+        },
+        "depends_on": [
+          "github_repository.function-repo",
+          "google_service_account_key.service_account_key"
+        ],
+        "plaintext_value": "${google_service_account_key.service_account_key.private_key}",
+        "repository": "${github_repository.function-repo.name}",
+        "secret_name": "GCP_CREDENTIALS"
+      }
+    },
+    "github_actions_variable": {
+      "function_name_variable": {
+        "//": {
+          "metadata": {
+            "path": "gcp-function/function_name_variable",
+            "uniqueId": "function_name_variable"
+          }
+        },
+        "depends_on": [
+          "github_repository.function-repo"
+        ],
+        "repository": "${github_repository.function-repo.name}",
+        "value": "${replace(var.project_name, \"-\", \"_\")}",
+        "variable_name": "FUNCTION_NAME"
+      },
+      "gcp_cloud_service_secret": {
+        "//": {
+          "metadata": {
+            "path": "gcp-function/gcp_cloud_service_secret",
+            "uniqueId": "gcp_cloud_service_secret"
+          }
+        },
+        "depends_on": [
+          "github_repository.function-repo"
+        ],
+        "repository": "${github_repository.function-repo.name}",
+        "value": "${module.google_cloud_run.service_name}",
+        "variable_name": "GCP_CLOUD_SERVICE"
+      },
+      "gcp_projecy_id_secret": {
+        "//": {
+          "metadata": {
+            "path": "gcp-function/gcp_projecy_id_secret",
+            "uniqueId": "gcp_projecy_id_secret"
+          }
+        },
+        "depends_on": [
+          "github_repository.function-repo"
+        ],
+        "repository": "${github_repository.function-repo.name}",
+        "value": "${var.project_id}",
+        "variable_name": "GCP_PROJECT_ID"
+      },
+      "gcp_region_secret": {
+        "//": {
+          "metadata": {
+            "path": "gcp-function/gcp_region_secret",
+            "uniqueId": "gcp_region_secret"
+          }
+        },
+        "depends_on": [
+          "github_repository.function-repo"
+        ],
+        "repository": "${github_repository.function-repo.name}",
+        "value": "${var.region}",
+        "variable_name": "GCP_REGION"
+      },
+      "gcp_repository_secret": {
+        "//": {
+          "metadata": {
+            "path": "gcp-function/gcp_repository_secret",
+            "uniqueId": "gcp_repository_secret"
+          }
+        },
+        "depends_on": [
+          "github_repository.function-repo"
+        ],
+        "repository": "${github_repository.function-repo.name}",
+        "value": "${google_artifact_registry_repository.project-repo.name}",
+        "variable_name": "GCP_REPOSITORY"
+      },
+      "project_name": {
+        "//": {
+          "metadata": {
+            "path": "gcp-function/project_name_23",
+            "uniqueId": "project_name"
+          }
+        },
+        "depends_on": [
+          "github_repository.function-repo"
+        ],
+        "repository": "${github_repository.function-repo.name}",
+        "value": "${var.project_name}",
+        "variable_name": "PROJECT_NAME"
+      }
+    },
+    "github_repository": {
+      "function-repo": {
+        "//": {
+          "metadata": {
+            "path": "gcp-function/function-repo",
+            "uniqueId": "function-repo"
+          }
+        },
+        "description": "Dépot pour le projet ${var.project_name} de la direction ${var.direction}",
+        "name": "${var.direction}-${var.project_name}-function",
+        "template": {
+          "include_all_branches": false,
+          "owner": "gouv-nc-data",
+          "repository": "gcp-function-template"
+        },
+        "visibility": "internal"
+      }
+    },
+    "google_artifact_registry_repository": {
+      "project-repo": {
+        "//": {
+          "metadata": {
+            "path": "gcp-function/project-repo",
+            "uniqueId": "project-repo"
+          }
+        },
+        "description": "docker repository for ${var.project_name}",
+        "format": "DOCKER",
+        "location": "${var.region}",
+        "project": "${var.project_id}",
+        "repository_id": "${var.project_name}"
+      }
+    },
+    "google_artifact_registry_repository_iam_member": {
+      "binding": {
+        "//": {
+          "metadata": {
+            "path": "gcp-function/binding",
+            "uniqueId": "binding"
+          }
+        },
+        "location": "${var.region}",
+        "member": "serviceAccount:${google_service_account.service_account.email}",
+        "project": "${var.project_id}",
+        "repository": "${google_artifact_registry_repository.project-repo.name}",
+        "role": "roles/artifactregistry.repoAdmin"
+      }
+    },
+    "google_cloud_scheduler_job": {
+      "job": {
+        "//": {
+          "metadata": {
+            "path": "gcp-function/job",
+            "uniqueId": "job"
+          }
+        },
+        "attempt_deadline": "320s",
+        "description": "Schedule du workflow pour ${var.project_name} en ${var.schedule}]",
+        "http_target": {
+          "http_method": "POST",
+          "oauth_token": {
+            "service_account_email": "${google_service_account.service_account.email}"
+          },
+          "uri": "https://workflowexecutions.googleapis.com/v1/${google_workflows_workflow.workflow.id}/executions"
+        },
+        "name": "schedule-${var.project_name}-${var.project_id}",
+        "project": "${var.project_id}",
+        "region": "${var.region}",
+        "retry_config": {
+          "retry_count": 1
+        },
+        "schedule": "${var.schedule}",
+        "time_zone": "Pacific/Noumea"
+      }
+    },
+    "google_monitoring_alert_policy": {
+      "errors": {
+        "//": {
+          "metadata": {
+            "path": "gcp-function/errors",
+            "uniqueId": "errors"
+          }
+        },
+        "alert_strategy": {
+          "notification_rate_limit": {
+            "period": "300s"
+          }
+        },
+        "combiner": "OR",
+        "conditions": [
+          {
+            "display_name": "Error condition"
+          }
+        ],
+        "display_name": "Errors in logs alert policy on ${var.project_name}",
+        "notification_channels": "${var.notification_channels}",
+        "project": "${var.project_id}"
+      }
+    },
+    "google_project_iam_member": {
+      "service_account_bindings-roles--artifactregistryadmin": {
+        "//": {
+          "metadata": {
+            "path": "gcp-function/service_account_bindings-roles--artifactregistry.admin",
+            "uniqueId": "service_account_bindings-roles--artifactregistryadmin"
+          }
+        },
+        "member": "serviceAccount:${google_service_account.service_account.email}",
+        "project": "${var.project_id}",
+        "role": "roles/artifactregistry.admin"
+      },
+      "service_account_bindings-roles--bigquerydataEditor": {
+        "//": {
+          "metadata": {
+            "path": "gcp-function/service_account_bindings-roles--bigquery.dataEditor",
+            "uniqueId": "service_account_bindings-roles--bigquerydataEditor"
+          }
+        },
+        "member": "serviceAccount:${google_service_account.service_account.email}",
+        "project": "${var.project_id}",
+        "role": "roles/bigquery.dataEditor"
+      },
+      "service_account_bindings-roles--bigqueryuser": {
+        "//": {
+          "metadata": {
+            "path": "gcp-function/service_account_bindings-roles--bigquery.user",
+            "uniqueId": "service_account_bindings-roles--bigqueryuser"
+          }
+        },
+        "member": "serviceAccount:${google_service_account.service_account.email}",
+        "project": "${var.project_id}",
+        "role": "roles/bigquery.user"
+      },
+      "service_account_bindings-roles--iamserviceAccountUser": {
+        "//": {
+          "metadata": {
+            "path": "gcp-function/service_account_bindings-roles--iam.serviceAccountUser",
+            "uniqueId": "service_account_bindings-roles--iamserviceAccountUser"
+          }
+        },
+        "member": "serviceAccount:${google_service_account.service_account.email}",
+        "project": "${var.project_id}",
+        "role": "roles/iam.serviceAccountUser"
+      },
+      "service_account_bindings-roles--iamworkloadIdentityUser": {
+        "//": {
+          "metadata": {
+            "path": "gcp-function/service_account_bindings-roles--iam.workloadIdentityUser",
+            "uniqueId": "service_account_bindings-roles--iamworkloadIdentityUser"
+          }
+        },
+        "member": "serviceAccount:${google_service_account.service_account.email}",
+        "project": "${var.project_id}",
+        "role": "roles/iam.workloadIdentityUser"
+      },
+      "service_account_bindings-roles--runadmin": {
+        "//": {
+          "metadata": {
+            "path": "gcp-function/service_account_bindings-roles--run.admin",
+            "uniqueId": "service_account_bindings-roles--runadmin"
+          }
+        },
+        "member": "serviceAccount:${google_service_account.service_account.email}",
+        "project": "${var.project_id}",
+        "role": "roles/run.admin"
+      },
+      "service_account_bindings-roles--storageinsightsCollectorService": {
+        "//": {
+          "metadata": {
+            "path": "gcp-function/service_account_bindings-roles--storage.insightsCollectorService",
+            "uniqueId": "service_account_bindings-roles--storageinsightsCollectorService"
+          }
+        },
+        "member": "serviceAccount:${google_service_account.service_account.email}",
+        "project": "${var.project_id}",
+        "role": "roles/storage.insightsCollectorService"
+      },
+      "service_account_bindings-roles--storageobjectAdmin": {
+        "//": {
+          "metadata": {
+            "path": "gcp-function/service_account_bindings-roles--storage.objectAdmin",
+            "uniqueId": "service_account_bindings-roles--storageobjectAdmin"
+          }
+        },
+        "member": "serviceAccount:${google_service_account.service_account.email}",
+        "project": "${var.project_id}",
+        "role": "roles/storage.objectAdmin"
+      },
+      "service_account_bindings-roles--storageobjectUser": {
+        "//": {
+          "metadata": {
+            "path": "gcp-function/service_account_bindings-roles--storage.objectUser",
+            "uniqueId": "service_account_bindings-roles--storageobjectUser"
+          }
+        },
+        "member": "serviceAccount:${google_service_account.service_account.email}",
+        "project": "${var.project_id}",
+        "role": "roles/storage.objectUser"
+      },
+      "service_account_bindings-roles--storagetransferuser": {
+        "//": {
+          "metadata": {
+            "path": "gcp-function/service_account_bindings-roles--storagetransfer.user",
+            "uniqueId": "service_account_bindings-roles--storagetransferuser"
+          }
+        },
+        "member": "serviceAccount:${google_service_account.service_account.email}",
+        "project": "${var.project_id}",
+        "role": "roles/storagetransfer.user"
+      },
+      "service_account_bindings-roles--workflowsinvoker": {
+        "//": {
+          "metadata": {
+            "path": "gcp-function/service_account_bindings-roles--workflows.invoker",
+            "uniqueId": "service_account_bindings-roles--workflowsinvoker"
+          }
+        },
+        "member": "serviceAccount:${google_service_account.service_account.email}",
+        "project": "${var.project_id}",
+        "role": "roles/workflows.invoker"
+      }
+    },
+    "google_project_service": {
+      "service-cloudschedulergoogleapiscom": {
+        "//": {
+          "metadata": {
+            "path": "gcp-function/service-cloudscheduler.googleapis.com",
+            "uniqueId": "service-cloudschedulergoogleapiscom"
+          }
+        },
+        "project": "${var.project_id}",
+        "service": "cloudscheduler.googleapis.com"
+      },
+      "service-iamcredentialsgoogleapiscom": {
+        "//": {
+          "metadata": {
+            "path": "gcp-function/service-iamcredentials.googleapis.com",
+            "uniqueId": "service-iamcredentialsgoogleapiscom"
+          }
+        },
+        "project": "${var.project_id}",
+        "service": "iamcredentials.googleapis.com"
+      },
+      "service-rungoogleapiscom": {
+        "//": {
+          "metadata": {
+            "path": "gcp-function/service-run.googleapis.com",
+            "uniqueId": "service-rungoogleapiscom"
+          }
+        },
+        "project": "${var.project_id}",
+        "service": "run.googleapis.com"
+      },
+      "service-storage-componentgoogleapiscom": {
+        "//": {
+          "metadata": {
+            "path": "gcp-function/service-storage-component.googleapis.com",
+            "uniqueId": "service-storage-componentgoogleapiscom"
+          }
+        },
+        "project": "${var.project_id}",
+        "service": "storage-component.googleapis.com"
+      },
+      "service-workflowsgoogleapiscom": {
+        "//": {
+          "metadata": {
+            "path": "gcp-function/service-workflows.googleapis.com",
+            "uniqueId": "service-workflowsgoogleapiscom"
+          }
+        },
+        "project": "${var.project_id}",
+        "service": "workflows.googleapis.com"
+      }
+    },
+    "google_service_account": {
+      "service_account": {
+        "//": {
+          "metadata": {
+            "path": "gcp-function/service_account",
+            "uniqueId": "service_account"
+          }
+        },
+        "account_id": "sa-${var.project_name}",
+        "display_name": "Service Account created by terraform for ${var.project_id}",
+        "project": "${var.project_id}"
+      }
+    },
+    "google_service_account_key": {
+      "service_account_key": {
+        "//": {
+          "metadata": {
+            "path": "gcp-function/service_account_key",
+            "uniqueId": "service_account_key"
+          }
+        },
+        "service_account_id": "${google_service_account.service_account.name}"
+      }
+    },
+    "google_storage_bucket": {
+      "bucket": {
+        "//": {
+          "metadata": {
+            "path": "gcp-function/bucket",
+            "uniqueId": "bucket"
+          }
+        },
+        "location": "${var.region}",
+        "name": "bucket-${var.project_name}-${var.project_id}",
+        "project": "${var.project_id}",
+        "storage_class": "REGIONAL",
+        "uniform_bucket_level_access": true
+      }
+    },
+    "google_workflows_workflow": {
+      "workflow": {
+        "//": {
+          "metadata": {
+            "path": "gcp-function/workflow",
+            "uniqueId": "workflow"
+          }
+        },
+        "description": "A workflow for ${var.project_id} data transfert",
+        "name": "workflow-${var.project_name}-${var.project_id}",
+        "project": "${var.project_id}",
+        "region": "${var.region}",
+        "service_account": "${google_service_account.service_account.id}",
+        "source_contents": "- cdf-function:    call: http.get     args:        url: ${module.google_cloud_run.service_output.status[\"0\"].url}         auth:            type: OIDC         timeout: 1800     result: function_result"
+      }
+    }
+  },
+  "terraform": {
+    "required_providers": {
+      "github": {
+        "version": "~> 5.10.0"
+      },
+      "google": {
+        "version": "~> 5.0"
+      }
+    }
+  },
+  "variable": {
+    "cpu_limits": [
+      {
+        "default": "1000m",
+        "description": "cpu maximal alloué au container https://cloud.google.com/run/docs/configuring/cpu?hl=fr",
+        "type": "string"
+      }
+    ],
+    "create_bucket": [
+      {
+        "default": true,
+        "description": "Création ou non d'un bucket associé au projet",
+        "type": "bool"
+      }
+    ],
+    "direction": [
+      {
+        "description": "direction du projet",
+        "type": "string"
+      }
+    ],
+    "env": [
+      {
+        "description": "Variables d'environnement pour Cloud Run",
+        "type": "map(any)"
+      }
+    ],
+    "group_name": [
+      {
+        "description": "groupe lié au projet",
+        "type": "string"
+      }
+    ],
+    "image": [
+      {
+        "description": "Image Cloud Run à déployer",
+        "type": "string"
+      }
+    ],
+    "memory_limits": [
+      {
+        "default": "512Mi",
+        "description": "Mémoire maximale allouée au container https://cloud.google.com/run/docs/configuring/memory-limits?hl=fr#terraform",
+        "type": "string"
+      }
+    ],
+    "notification_channels": [
+      {
+        "description": "canal de notification pour les alertes sur cloud run",
+        "type": "list(string)"
+      }
+    ],
+    "project_id": [
+      {
+        "description": "id du projet",
+        "type": "string"
+      }
+    ],
+    "project_name": [
+      {
+        "description": "nom du projet",
+        "type": "string"
+      }
+    ],
+    "region": [
+      {
+        "default": "europe-west1",
+        "type": "string"
+      }
+    ],
+    "schedule": [
+      {
+        "description": "expression cron de schedule du job",
+        "type": "string"
+      }
+    ],
+    "timeout_seconds": [
+      {
+        "default": 300,
+        "description": "timeout d'execution de la fonction",
+        "type": "number"
+      }
+    ]
+  }
+}

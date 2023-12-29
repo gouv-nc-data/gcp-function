@@ -1,7 +1,7 @@
 {
     "_meta": {
         "hash": {
-            "sha256": "da182457ac60ad9cec8805dadccda1d6f5aa6d5e99112fa283a7fc664c8d8b70"
+            "sha256": "99f65224cf697d3bf6d9865043932b92a4c9cfe27dfed1d95647c993c8684a83"
         },
         "pipfile-spec": 6,
         "requires": {
@@ -58,6 +58,15 @@
             "index": "pypi",
             "markers": "python_version ~= '3.8'",
             "version": "==12.2.0"
+        },
+        "cdktf-tf-module-stack": {
+            "hashes": [
+                "sha256:0068b1c22a363a63cb230698c943ec2489b7e75eee1ef5d079080231edf92330",
+                "sha256:5baf509ea2246cd1c59556b113d056d53ce8fd095dbc92bd3e9b7b371bf626cb"
+            ],
+            "index": "pypi",
+            "markers": "python_version ~= '3.8'",
+            "version": "==4.0.12"
         },
         "constructs": {
             "hashes": [

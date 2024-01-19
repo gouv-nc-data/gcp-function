@@ -44,6 +44,8 @@ No requirements.
 | [google_storage_bucket.bucket](https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/storage_bucket) | resource |
 | [google_workflows_workflow.workflow](https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/workflows_workflow) | resource |
 
+Le service account créé est de la forme `sa-${var.project_name}` et doit matcher : `^[a-z](?:[-a-z0-9]***4,28***[a-z0-9])$`
+
 ## Inputs
 
 | Name | Description | Type | Default | Required |

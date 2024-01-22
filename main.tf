@@ -269,6 +269,7 @@ resource "google_compute_network" "vpc_network" {
 
 resource "google_compute_subnetwork" "cloud-run-subnet" {
   count         = try(var.ip_fixe ? 1 : 0, 0)
+  project    = var.project_id
   name          = "cloud-run-subnet"
   ip_cidr_range = "10.0.0.0/16"
   region        = var.region

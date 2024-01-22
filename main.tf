@@ -20,6 +20,11 @@ locals {
     "roles/storage.insightsCollectorService",
   ]
   image = var.image == null ? "${var.region}-docker.pkg.dev/${var.project_id}/${var.project_name}/${var.project_name}-function:latest" : var.image
+
+  local_vpc_connector = try(var.ip_fixe ? {
+    ip_cidr_range = "10.10.10.0/28"
+    vpc_self_link = google_compute_network.vpc_network[0].self_link
+  } : null, null)
 }
 
 resource "google_service_account" "service_account" {
@@ -82,8 +87,9 @@ module "google_cloud_run" {
       env = var.env
     }
   }
-  depends_on      = [google_project_service.service]
-  timeout_seconds = var.timeout_seconds
+  vpc_connector_create = local.local_vpc_connector
+  depends_on           = [google_project_service.service]
+  timeout_seconds      = var.timeout_seconds
 }
 
 ####
@@ -251,4 +257,28 @@ resource "google_monitoring_alert_policy" "errors" {
       period = "300s"
     }
   }
+}
+
+# ip fixe publique
+resource "google_compute_network" "vpc_network" {
+  count                   = try(var.ip_fixe ? 1 : 0, 0)
+  project                 = var.project_name
+  name                    = "cloud-run-vpc-network"
+  auto_create_subnetworks = true
+}
+
+resource "google_compute_subnetwork" "cloud-run-subnet" {
+  count         = try(var.ip_fixe ? 1 : 0, 0)
+  name          = "cloud-run-subnet"
+  ip_cidr_range = "10.0.0.0/16"
+  region        = var.region
+  network       = google_compute_network.vpc_network[0].id
+}
+
+resource "google_compute_address" "default" {
+  count      = try(var.ip_fixe ? 1 : 0, 0)
+  name       = "cr-static-ip-addr"
+  project    = var.project_id
+  region     = var.region
+  subnetwork = google_compute_subnetwork.cloud-run-subnet[0].id
 }

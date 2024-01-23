@@ -292,3 +292,9 @@ resource "google_project_service" "service_compute" {
   project = var.project_id
   service = "compute.googleapis.com"
 }
+
+resource "google_project_service" "service_vpcaccess" {
+  count   = try(var.ip_fixe ? 1 : 0, 0)
+  project = var.project_id
+  service = "vpcaccess.googleapis.com"
+}

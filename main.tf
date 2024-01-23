@@ -24,6 +24,7 @@ locals {
   local_vpc_connector = var.ip_fixe ? {
     ip_cidr_range = "10.10.10.0/28"
     vpc_self_link = google_compute_network.vpc_network[0].self_link
+    name          = "vpc-connector-${var.project_name}"
   } : null
 }
 

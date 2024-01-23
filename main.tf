@@ -262,7 +262,7 @@ resource "google_monitoring_alert_policy" "errors" {
 # ip fixe publique
 resource "google_compute_network" "vpc_network" {
   count                   = try(var.ip_fixe ? 1 : 0, 0)
-  project                 = var.project_name
+  project                 = var.project_id
   name                    = "cloud-run-vpc-network"
   auto_create_subnetworks = false
   depends_on              = [google_project_service.service_compute]

@@ -309,18 +309,18 @@ resource "google_compute_router" "compute_router" {
   count    = try(var.ip_fixe ? 1 : 0, 0)
   name     = "cr-static-ip-router"
   project  = var.project_id
-  network  = google_compute_network[0].vpc_network.name
+  network  = google_compute_network.vpc_network[0].name
   region   = var.region
 }
 
 resource "google_compute_router_nat" "default" {
   count    = try(var.ip_fixe ? 1 : 0, 0)
   name     = "cr-static-nat-${var.project_name}"
-  router   = google_compute_router[0].compute_router.name
+  router   = google_compute_router.compute_router[0].name
   region   = var.region
 
   nat_ip_allocate_option = "MANUAL_ONLY"
-  nat_ips                = [google_compute_address[0].default.self_link]
+  nat_ips                = [google_compute_address.default[0].self_link]
 
   source_subnetwork_ip_ranges_to_nat = "LIST_OF_SUBNETWORKS"
   # subnetwork {

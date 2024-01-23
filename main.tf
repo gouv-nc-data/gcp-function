@@ -26,6 +26,11 @@ locals {
     vpc_self_link = google_compute_network.vpc_network[0].self_link
     name          = "vpc-connector-${var.project_name}"
   } : null
+
+  revision_annotations = var.ip_fixe ? {
+    vpcaccess_egress    = "all-traffic"
+    vpcaccess_connector = "vpc-connector-${var.project_name}"
+  } : null
 }
 
 resource "google_service_account" "service_account" {
@@ -69,7 +74,7 @@ resource "google_project_service" "service" {
 ####
 
 module "google_cloud_run" {
-  source           = "git::https://github.com/GoogleCloudPlatform/cloud-foundation-fabric//modules/cloud-run-v2?ref=master"
+  source           = "git::https://github.com/GoogleCloudPlatform/cloud-foundation-fabric//modules/cloud-run?ref=v28.0.0"
   project_id       = var.project_id
   name             = "cloudrun-${var.project_name}-${var.project_id}"
   region           = var.region

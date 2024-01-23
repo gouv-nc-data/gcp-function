@@ -316,6 +316,7 @@ resource "google_compute_router" "compute_router" {
 resource "google_compute_router_nat" "default" {
   count    = try(var.ip_fixe ? 1 : 0, 0)
   name     = "cr-static-nat-${var.project_name}"
+  project  = var.project_id
   router   = google_compute_router.compute_router[0].name
   region   = var.region
 

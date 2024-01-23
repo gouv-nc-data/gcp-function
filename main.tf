@@ -306,6 +306,7 @@ resource "google_project_service" "service_vpcaccess" {
 }
 
 resource "google_compute_router" "compute_router" {
+  count    = try(var.ip_fixe ? 1 : 0, 0)
   name     = "cr-static-ip-router"
   project  = var.project_id
   network  = google_compute_network[0].vpc_network.name
@@ -313,7 +314,7 @@ resource "google_compute_router" "compute_router" {
 }
 
 resource "google_compute_router_nat" "default" {
-  provider = google-beta
+  count    = try(var.ip_fixe ? 1 : 0, 0)
   name     = "cr-static-nat-${var.project_name}"
   router   = google_compute_router[0].compute_router.name
   region   = var.region

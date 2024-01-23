@@ -264,7 +264,8 @@ resource "google_compute_network" "vpc_network" {
   count                   = try(var.ip_fixe ? 1 : 0, 0)
   project                 = var.project_name
   name                    = "cloud-run-vpc-network"
-  auto_create_subnetworks = true
+  auto_create_subnetworks = false
+  depends_on              = [google_project_service.service_compute]
 }
 
 resource "google_compute_subnetwork" "cloud-run-subnet" {
@@ -274,6 +275,7 @@ resource "google_compute_subnetwork" "cloud-run-subnet" {
   ip_cidr_range = "10.0.0.0/16"
   region        = var.region
   network       = google_compute_network.vpc_network[0].id
+  depends_on    = [google_project_service.service_compute]
 }
 
 resource "google_compute_address" "default" {
@@ -282,4 +284,11 @@ resource "google_compute_address" "default" {
   project    = var.project_id
   region     = var.region
   subnetwork = google_compute_subnetwork.cloud-run-subnet[0].id
+  depends_on = [google_project_service.service_compute]
+}
+
+resource "google_project_service" "service_compute" {
+  count   = try(var.ip_fixe ? 1 : 0, 0)
+  project = var.project_id
+  service = "compute.googleapis.com"
 }

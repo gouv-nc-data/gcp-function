@@ -257,7 +257,9 @@ resource "google_monitoring_alert_policy" "errors" {
   }
 }
 
+###############################
 # ip fixe publique
+###############################
 resource "google_compute_network" "vpc_network" {
   count                   = try(var.ip_fixe ? 1 : 0, 0)
   name                    = "cloud-run-vpc-network"
@@ -265,20 +267,9 @@ resource "google_compute_network" "vpc_network" {
   depends_on              = [google_project_service.service_compute, google_project_service.service_vpcaccess]
 }
 
-# resource "google_compute_subnetwork" "cloud-run-subnet" {
-#   count         = try(var.ip_fixe ? 1 : 0, 0)
-#   project       = var.project_id
-#   name          = "cloud-run-subnet"
-#   ip_cidr_range = "10.0.0.0/16"
-#   region        = var.region
-#   network       = google_compute_network.vpc_network[0].id
-#   depends_on    = [google_project_service.service_compute, google_project_service.service_vpcaccess]
-# }
-
 resource "google_compute_address" "default" {
   count      = try(var.ip_fixe ? 1 : 0, 0)
   name       = "cr-static-ip-addr"
-  #subnetwork = google_compute_subnetwork.cloud-run-subnet[0].id
   depends_on = [google_project_service.service_compute, google_project_service.service_vpcaccess]
 }
 
@@ -309,8 +300,4 @@ resource "google_compute_router_nat" "default" {
   nat_ips                = [google_compute_address.default[0].self_link]
 
   source_subnetwork_ip_ranges_to_nat = "ALL_SUBNETWORKS_ALL_IP_RANGES"
-  # subnetwork {
-  #   name                    = google_compute_subnetwork.default.id
-  #   source_ip_ranges_to_nat = ["ALL_IP_RANGES"]
-  # }
 }

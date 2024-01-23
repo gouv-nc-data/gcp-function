@@ -21,10 +21,10 @@ locals {
   ]
   image = var.image == null ? "${var.region}-docker.pkg.dev/${var.project_id}/${var.project_name}/${var.project_name}-function:latest" : var.image
 
-  local_vpc_connector = try(var.ip_fixe ? {
+  local_vpc_connector = var.ip_fixe ? {
     ip_cidr_range = "10.10.10.0/28"
     vpc_self_link = google_compute_network.vpc_network[0].self_link
-  } : null, null)
+  } : null
 }
 
 resource "google_service_account" "service_account" {
@@ -269,7 +269,7 @@ resource "google_compute_network" "vpc_network" {
 
 resource "google_compute_subnetwork" "cloud-run-subnet" {
   count         = try(var.ip_fixe ? 1 : 0, 0)
-  project    = var.project_id
+  project       = var.project_id
   name          = "cloud-run-subnet"
   ip_cidr_range = "10.0.0.0/16"
   region        = var.region

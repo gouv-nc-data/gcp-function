@@ -308,7 +308,7 @@ resource "google_project_service" "service_vpcaccess" {
 resource "google_compute_router" "compute_router" {
   name     = "cr-static-ip-router"
   project  = var.project_id
-  network  = google_compute_network.vpc_network.name
+  network  = google_compute_network[0].vpc_network.name
   region   = var.region
 }
 
@@ -319,7 +319,7 @@ resource "google_compute_router_nat" "default" {
   region   = var.region
 
   nat_ip_allocate_option = "MANUAL_ONLY"
-  nat_ips                = [google_compute_address.default.self_link]
+  nat_ips                = [google_compute_address[0].default.self_link]
 
   source_subnetwork_ip_ranges_to_nat = "LIST_OF_SUBNETWORKS"
   # subnetwork {

@@ -264,27 +264,27 @@ resource "google_compute_network" "vpc_network" {
   count                   = try(var.ip_fixe ? 1 : 0, 0)
   project                 = var.project_id
   name                    = "cloud-run-vpc-network"
-  auto_create_subnetworks = false
-  depends_on              = [google_project_service.service_compute]
+  auto_create_subnetworks = true
+  depends_on              = [google_project_service.service_compute, google_project_service.service_vpcaccess]
 }
 
-resource "google_compute_subnetwork" "cloud-run-subnet" {
-  count         = try(var.ip_fixe ? 1 : 0, 0)
-  project       = var.project_id
-  name          = "cloud-run-subnet"
-  ip_cidr_range = "10.0.0.0/16"
-  region        = var.region
-  network       = google_compute_network.vpc_network[0].id
-  depends_on    = [google_project_service.service_compute]
-}
+# resource "google_compute_subnetwork" "cloud-run-subnet" {
+#   count         = try(var.ip_fixe ? 1 : 0, 0)
+#   project       = var.project_id
+#   name          = "cloud-run-subnet"
+#   ip_cidr_range = "10.0.0.0/16"
+#   region        = var.region
+#   network       = google_compute_network.vpc_network[0].id
+#   depends_on    = [google_project_service.service_compute, google_project_service.service_vpcaccess]
+# }
 
 resource "google_compute_address" "default" {
   count      = try(var.ip_fixe ? 1 : 0, 0)
   name       = "cr-static-ip-addr"
   project    = var.project_id
   region     = var.region
-  subnetwork = google_compute_subnetwork.cloud-run-subnet[0].id
-  depends_on = [google_project_service.service_compute]
+  #subnetwork = google_compute_subnetwork.cloud-run-subnet[0].id
+  depends_on = [google_project_service.service_compute, google_project_service.service_vpcaccess]
 }
 
 resource "google_project_service" "service_compute" {

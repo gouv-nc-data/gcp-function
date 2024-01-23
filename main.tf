@@ -69,7 +69,7 @@ resource "google_project_service" "service" {
 ####
 
 module "google_cloud_run" {
-  source           = "git::https://github.com/GoogleCloudPlatform/cloud-foundation-fabric//modules/cloud-run?ref=v28.0.0"
+  source           = "git::https://github.com/GoogleCloudPlatform/cloud-foundation-fabric//modules/cloud-run-v2?ref=v28.0.0"
   project_id       = var.project_id
   name             = "cloudrun-${var.project_name}-${var.project_id}"
   region           = var.region
@@ -298,4 +298,27 @@ resource "google_project_service" "service_vpcaccess" {
   count   = try(var.ip_fixe ? 1 : 0, 0)
   project = var.project_id
   service = "vpcaccess.googleapis.com"
+}
+
+resource "google_compute_router" "compute_router" {
+  name     = "cr-static-ip-router"
+  project  = var.project_id
+  network  = google_compute_network.vpc_network.name
+  region   = var.region
+}
+
+resource "google_compute_router_nat" "default" {
+  provider = google-beta
+  name     = "cr-static-nat-${var.project_name}"
+  router   = google_compute_router.compute_router.name
+  region   = var.region
+
+  nat_ip_allocate_option = "MANUAL_ONLY"
+  nat_ips                = [google_compute_address.default.self_link]
+
+  source_subnetwork_ip_ranges_to_nat = "LIST_OF_SUBNETWORKS"
+  subnetwork {
+    name                    = google_compute_subnetwork.default.id
+    source_ip_ranges_to_nat = ["ALL_IP_RANGES"]
+  }
 }

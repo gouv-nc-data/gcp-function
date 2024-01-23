@@ -308,7 +308,7 @@ resource "google_compute_router_nat" "default" {
   nat_ip_allocate_option = "MANUAL_ONLY"
   nat_ips                = [google_compute_address.default[0].self_link]
 
-  source_subnetwork_ip_ranges_to_nat = "LIST_OF_SUBNETWORKS"
+  source_subnetwork_ip_ranges_to_nat = "ALL_SUBNETWORKS_ALL_IP_RANGES"
   # subnetwork {
   #   name                    = google_compute_subnetwork.default.id
   #   source_ip_ranges_to_nat = ["ALL_IP_RANGES"]

@@ -315,15 +315,15 @@ resource "google_compute_router" "compute_router" {
 resource "google_compute_router_nat" "default" {
   provider = google-beta
   name     = "cr-static-nat-${var.project_name}"
-  router   = google_compute_router.compute_router.name
+  router   = google_compute_router[0].compute_router.name
   region   = var.region
 
   nat_ip_allocate_option = "MANUAL_ONLY"
   nat_ips                = [google_compute_address.default.self_link]
 
   source_subnetwork_ip_ranges_to_nat = "LIST_OF_SUBNETWORKS"
-  subnetwork {
-    name                    = google_compute_subnetwork.default.id
-    source_ip_ranges_to_nat = ["ALL_IP_RANGES"]
-  }
+  # subnetwork {
+  #   name                    = google_compute_subnetwork.default.id
+  #   source_ip_ranges_to_nat = ["ALL_IP_RANGES"]
+  # }
 }

@@ -20,6 +20,17 @@ locals {
     "roles/storage.insightsCollectorService",
   ]
   image = var.image == null ? "${var.region}-docker.pkg.dev/${var.project_id}/${var.project_name}/${var.project_name}-function:latest" : var.image
+
+  local_vpc_connector = var.ip_fixe ? {
+    ip_cidr_range = "10.10.10.0/28"
+    vpc_self_link = google_compute_network.vpc_network[0].self_link
+    name          = "vpc-connector-${var.project_name}"
+  } : null
+
+  revision_annotations = var.ip_fixe ? {
+    vpcaccess_egress    = "all-traffic"
+    vpcaccess_connector = "vpc-connector-${var.project_name}"
+  } : null
 }
 
 resource "google_service_account" "service_account" {
@@ -30,8 +41,8 @@ resource "google_service_account" "service_account" {
 
 resource "google_project_iam_member" "service_account_bindings" {
   for_each = toset(local.service_account_roles)
-  project  = var.project_id
   role     = each.value
+  project  = var.project_id
   member   = "serviceAccount:${google_service_account.service_account.email}"
 }
 
@@ -41,11 +52,16 @@ resource "google_project_iam_member" "service_account_bindings" {
 
 resource "google_storage_bucket" "bucket" {
   count                       = try(var.create_bucket ? 1 : 0, 0)
-  project                     = var.project_id
   name                        = "bucket-${var.project_name}-${var.project_id}"
   location                    = var.region
   storage_class               = "REGIONAL"
   uniform_bucket_level_access = true
+  force_destroy               = true
+  lifecycle {
+    ignore_changes = [
+      lifecycle_rule,
+    ]
+  }
 }
 
 ####
@@ -54,7 +70,6 @@ resource "google_storage_bucket" "bucket" {
 
 resource "google_project_service" "service" {
   for_each = toset(local.services_to_activate)
-  project  = var.project_id
   service  = each.value
 }
 
@@ -63,7 +78,7 @@ resource "google_project_service" "service" {
 ####
 
 module "google_cloud_run" {
-  source           = "git::https://github.com/GoogleCloudPlatform/cloud-foundation-fabric//modules/cloud-run?ref=v26.0.0"
+  source           = "git::https://github.com/GoogleCloudPlatform/cloud-foundation-fabric//modules/cloud-run?ref=v28.0.0"
   project_id       = var.project_id
   name             = "cloudrun-${var.project_name}-${var.project_id}"
   region           = var.region
@@ -82,8 +97,9 @@ module "google_cloud_run" {
       env = var.env
     }
   }
-  depends_on      = [google_project_service.service]
-  timeout_seconds = var.timeout_seconds
+  vpc_connector_create = local.local_vpc_connector
+  depends_on           = [google_project_service.service]
+  timeout_seconds      = var.timeout_seconds
 }
 
 ####
@@ -91,8 +107,6 @@ module "google_cloud_run" {
 ####
 resource "google_workflows_workflow" "workflow" {
   name            = "workflow-${var.project_name}-${var.project_id}"
-  region          = var.region
-  project         = var.project_id
   description     = "A workflow for ${var.project_id} data transfert"
   service_account = google_service_account.service_account.id
   source_contents = <<-EOF
@@ -110,7 +124,6 @@ EOF
 
 resource "google_cloud_scheduler_job" "job" {
   name             = "schedule-${var.project_name}-${var.project_id}"
-  project          = var.project_id
   description      = "Schedule du workflow pour ${var.project_name} en ${var.schedule}]"
   schedule         = var.schedule
   time_zone        = "Pacific/Noumea"
@@ -136,7 +149,6 @@ resource "google_cloud_scheduler_job" "job" {
 # Artifact registry
 ####
 resource "google_artifact_registry_repository" "project-repo" {
-  project       = var.project_id
   location      = var.region
   repository_id = var.project_name
   description   = "docker repository for ${var.project_name}"
@@ -145,7 +157,6 @@ resource "google_artifact_registry_repository" "project-repo" {
 }
 
 resource "google_artifact_registry_repository_iam_member" "binding" {
-  project    = var.project_id
   location   = var.region
   repository = google_artifact_registry_repository.project-repo.name
   role       = "roles/artifactregistry.repoAdmin"
@@ -236,7 +247,6 @@ resource "github_actions_variable" "function_name_variable" {
 ###############################
 resource "google_monitoring_alert_policy" "errors" {
   display_name = "Errors in logs alert policy on ${var.project_name}"
-  project      = var.project_id
   combiner     = "OR"
   conditions {
     display_name = "Error condition"
@@ -251,4 +261,49 @@ resource "google_monitoring_alert_policy" "errors" {
       period = "300s"
     }
   }
+}
+
+###############################
+# ip fixe publique
+###############################
+resource "google_compute_network" "vpc_network" {
+  count                   = try(var.ip_fixe ? 1 : 0, 0)
+  name                    = "cloud-run-vpc-network"
+  auto_create_subnetworks = true
+  depends_on              = [google_project_service.service_compute, google_project_service.service_vpcaccess]
+}
+
+resource "google_compute_address" "default" {
+  count      = try(var.ip_fixe ? 1 : 0, 0)
+  name       = "cr-static-ip-addr"
+  depends_on = [google_project_service.service_compute, google_project_service.service_vpcaccess]
+}
+
+resource "google_project_service" "service_compute" {
+  count   = try(var.ip_fixe ? 1 : 0, 0)
+  service = "compute.googleapis.com"
+}
+
+resource "google_project_service" "service_vpcaccess" {
+  count   = try(var.ip_fixe ? 1 : 0, 0)
+  service = "vpcaccess.googleapis.com"
+}
+
+resource "google_compute_router" "compute_router" {
+  count    = try(var.ip_fixe ? 1 : 0, 0)
+  name     = "cr-static-ip-router"
+  network  = google_compute_network.vpc_network[0].name
+  region   = var.region
+}
+
+resource "google_compute_router_nat" "default" {
+  count    = try(var.ip_fixe ? 1 : 0, 0)
+  name     = "cr-static-nat-${var.project_name}"
+  router   = google_compute_router.compute_router[0].name
+  region   = var.region
+
+  nat_ip_allocate_option = "MANUAL_ONLY"
+  nat_ips                = [google_compute_address.default[0].self_link]
+
+  source_subnetwork_ip_ranges_to_nat = "ALL_SUBNETWORKS_ALL_IP_RANGES"
 }

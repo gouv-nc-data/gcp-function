@@ -74,3 +74,9 @@ variable "env" {
   type        = map(any)
   default     = null
 }
+
+variable "ip_fixe" {
+  description = "Ajout d'une ip fixe publique à l'instance Cloud Run"
+  type        = bool
+  default     = false
+}

@@ -46,6 +46,11 @@ resource "google_storage_bucket" "bucket" {
   location                    = var.region
   storage_class               = "REGIONAL"
   uniform_bucket_level_access = true
+  lifecycle {
+    ignore_changes = [
+      lifecycle_rule,
+    ]
+  }
 }
 
 ####

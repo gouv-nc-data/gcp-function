@@ -7,9 +7,9 @@ output "function_sa_email" {
 }
 
 output "vpc_network_name" {
-  value = google_compute_network.vpc_network.name
+  value = one(google_compute_network.vpc_network[*].name)
 }
 
 output "ip" {
-  value = google_compute_address.default[0].self_link
+  value = one(google_compute_address.default[*].self_link)
 }

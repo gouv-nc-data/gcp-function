@@ -1,5 +1,4 @@
 locals {
-  group_role = "roles/editor"
   services_to_activate = [
     "run.googleapis.com",
     "workflows.googleapis.com",
@@ -92,6 +91,7 @@ module "google_cloud_run" {
     }
   }
   vpc_connector_create = local.local_vpc_connector
+  revision_annotations = local.revision_annotations 
   depends_on           = [google_project_service.service]
   timeout_seconds      = var.timeout_seconds
 }
@@ -260,6 +260,17 @@ resource "google_monitoring_alert_policy" "errors" {
 ###############################
 # ip fixe publique
 ###############################
+#  Activation des API
+resource "google_project_service" "service_compute" {
+  count   = try(var.ip_fixe ? 1 : 0, 0)
+  service = "compute.googleapis.com"
+}
+
+resource "google_project_service" "service_vpcaccess" {
+  count   = try(var.ip_fixe ? 1 : 0, 0)
+  service = "vpcaccess.googleapis.com"
+}
+
 resource "google_compute_network" "vpc_network" {
   count                   = try(var.ip_fixe ? 1 : 0, 0)
   name                    = "cloud-run-vpc-network"
@@ -271,16 +282,6 @@ resource "google_compute_address" "default" {
   count      = try(var.ip_fixe ? 1 : 0, 0)
   name       = "cr-static-ip-addr"
   depends_on = [google_project_service.service_compute, google_project_service.service_vpcaccess]
-}
-
-resource "google_project_service" "service_compute" {
-  count   = try(var.ip_fixe ? 1 : 0, 0)
-  service = "compute.googleapis.com"
-}
-
-resource "google_project_service" "service_vpcaccess" {
-  count   = try(var.ip_fixe ? 1 : 0, 0)
-  service = "vpcaccess.googleapis.com"
 }
 
 resource "google_compute_router" "compute_router" {

@@ -290,14 +290,14 @@ resource "google_compute_router" "compute_router" {
   region   = var.region
 }
 
-# resource "google_compute_router_nat" "default" {
-#   count    = try(var.ip_fixe ? 1 : 0, 0)
-#   name     = "cr-static-nat-${var.project_name}"
-#   router   = google_compute_router.compute_router[0].name
-#   region   = var.region
+resource "google_compute_router_nat" "default" {
+  count    = try(var.ip_fixe ? 1 : 0, 0)
+  name     = "cr-static-nat-${var.project_name}"
+  router   = google_compute_router.compute_router[0].name
+  region   = var.region
 
-#   nat_ip_allocate_option = "MANUAL_ONLY"
-#   nat_ips                = [google_compute_address.default[0].self_link]
+  nat_ip_allocate_option = "MANUAL_ONLY"
+  nat_ips                = [google_compute_address.default[0].self_link]
 
-#   source_subnetwork_ip_ranges_to_nat = "ALL_SUBNETWORKS_ALL_IP_RANGES"
-# }
+  source_subnetwork_ip_ranges_to_nat = "ALL_SUBNETWORKS_ALL_IP_RANGES"
+}

@@ -11,5 +11,5 @@ output "vpc_network_name" {
 }
 
 output "ip" {
-  value = one(google_compute_address.default[*].self_link)
+  value = one(google_compute_address.default[*].address)
 }

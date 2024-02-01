@@ -13,3 +13,7 @@ output "vpc_network_name" {
 output "ip" {
   value = one(google_compute_address.default[*].address)
 }
+
+output "function_name" {
+  value = var.project_name
+}

@@ -5,3 +5,7 @@ output "run_url" {
 output "function_sa_email" {
   value = google_service_account.service_account.email
 }
+
+output "function_name" {
+  value = var.project_name
+}

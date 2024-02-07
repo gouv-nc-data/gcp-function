@@ -61,6 +61,7 @@ resource "google_project_service" "service" {
   for_each = toset(local.services_to_activate)
   project  = var.project_id
   service  = each.value
+  disable_on_destroy = false
 }
 
 ####

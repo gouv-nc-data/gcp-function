@@ -181,6 +181,7 @@ resource "github_repository" "function-repo" {
     repository           = "gcp-function-template"
     include_all_branches = false
   }
+  archive_on_destroy = true
 }
 
 resource "google_service_account_key" "service_account_key" {

@@ -181,6 +181,7 @@ resource "github_repository" "function-repo" {
     repository           = "gcp-function-template"
     include_all_branches = false
   }
+  auto_init = false
   archive_on_destroy = true
 }
 

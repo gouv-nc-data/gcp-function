@@ -1,5 +1,4 @@
 locals {
-  group_role = "roles/editor"
   services_to_activate = [
     "run.googleapis.com",
     "workflows.googleapis.com",
@@ -73,7 +72,7 @@ module "google_cloud_run" {
   project_id       = var.project_id
   name             = "cloudrun-${var.project_name}-${var.project_id}"
   region           = var.region
-  ingress_settings = "internal-and-cloud-load-balancing"
+  ingress_settings = var.ingress_settings
   service_account  = google_service_account.service_account.email
 
   containers = {
@@ -88,7 +87,7 @@ module "google_cloud_run" {
       env = var.env
     }
   }
-  # dépendanced : image créée par le repo et qu'elle soit dans artifact registry
+  # dépendances : image créée par le repo et qu'elle soit dans artifact registry
   depends_on      = [google_project_service.service, github_repository.function-repo, ]
   timeout_seconds = var.timeout_seconds
 }

@@ -75,8 +75,8 @@ variable "env" {
   default     = null
 }
 
-variable "ip_fixe" {
-  description = "Ajout d'une ip fixe publique à l'instance Cloud Run"
-  type        = bool
-  default     = false
+variable "ingress_settings" {
+  description = "Ingress settings can be one of 'all', 'internal', 'internal-and-cloud-load-balancing'(default)."
+  type        = string
+  default     = "internal-and-cloud-load-balancing"
 }

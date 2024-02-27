@@ -96,6 +96,7 @@ module "google_cloud_run" {
 # Workflow
 ####
 resource "google_workflows_workflow" "workflow" {
+  count           = try(var.schedule ? 1 : 0, 0)
   name            = "workflow-${var.project_name}-${var.project_id}"
   region          = var.region
   project         = var.project_id
@@ -115,6 +116,7 @@ EOF
 }
 
 resource "google_cloud_scheduler_job" "job" {
+  count            = try(var.schedule ? 1 : 0, 0)
   name             = "schedule-${var.project_name}-${var.project_id}"
   project          = var.project_id
   description      = "Schedule du workflow pour ${var.project_name} en ${var.schedule}]"

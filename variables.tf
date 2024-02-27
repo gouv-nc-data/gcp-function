@@ -44,6 +44,7 @@ variable "group_name" {
 variable "schedule" {
   type        = string
   description = "expression cron de schedule du job"
+  default = null
 }
 
 variable "timeout_seconds" {

@@ -87,8 +87,10 @@ module "google_cloud_run" {
       env = var.env
     }
   }
+  vpc_connector_create = local.local_vpc_connector
+  revision_annotations = local.revision_annotations 
   # dépendances : image créée par le repo et qu'elle soit dans artifact registry
-  depends_on      = [google_project_service.service, github_repository.function-repo, ]
+  depends_on      = [google_project_service.service, github_repository.function-repo]
   timeout_seconds = var.timeout_seconds
 }
 
@@ -262,4 +264,50 @@ resource "google_monitoring_alert_policy" "errors" {
       period = "300s"
     }
   }
+}
+
+###############################
+# ip fixe publique
+###############################
+#  Activation des API
+resource "google_project_service" "service_compute" {
+  count   = try(var.ip_fixe ? 1 : 0, 0)
+  service = "compute.googleapis.com"
+}
+
+resource "google_project_service" "service_vpcaccess" {
+  count   = try(var.ip_fixe ? 1 : 0, 0)
+  service = "vpcaccess.googleapis.com"
+}
+
+resource "google_compute_network" "vpc_network" {
+  count                   = try(var.ip_fixe ? 1 : 0, 0)
+  name                    = "cloud-run-vpc-network"
+  auto_create_subnetworks = true
+  depends_on              = [google_project_service.service_compute, google_project_service.service_vpcaccess]
+}
+
+resource "google_compute_address" "default" {
+  count      = try(var.ip_fixe ? 1 : 0, 0)
+  name       = "cr-static-ip-addr"
+  depends_on = [google_project_service.service_compute, google_project_service.service_vpcaccess]
+}
+
+resource "google_compute_router" "compute_router" {
+  count    = try(var.ip_fixe ? 1 : 0, 0)
+  name     = "cr-static-ip-router"
+  network  = google_compute_network.vpc_network[0].name
+  region   = var.region
+}
+
+resource "google_compute_router_nat" "default" {
+  count    = try(var.ip_fixe ? 1 : 0, 0)
+  name     = "cr-static-nat-${var.project_name}"
+  router   = google_compute_router.compute_router[0].name
+  region   = var.region
+
+  nat_ip_allocate_option = "MANUAL_ONLY"
+  nat_ips                = [google_compute_address.default[0].self_link]
+
+  source_subnetwork_ip_ranges_to_nat = "ALL_SUBNETWORKS_ALL_IP_RANGES"
 }

@@ -225,7 +225,7 @@ resource "github_actions_variable" "gcp_cloud_service_secret" {
   variable_name = "GCP_CLOUD_SERVICE"
   value         = module.google_cloud_run.service_name
   # en théorie pas besoin des dépendances car module.google_cloud_run et github_repository.function-repo sont en "References to Named Values"
-  depends_on    = [github_repository.function-repo]
+  depends_on = [github_repository.function-repo]
 }
 
 resource "github_actions_variable" "project_name" {

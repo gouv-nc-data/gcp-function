@@ -19,6 +19,17 @@ locals {
     "roles/storage.insightsCollectorService",
   ]
   image = var.image == null ? "${var.region}-docker.pkg.dev/${var.project_id}/${var.project_name}/${var.project_name}-function:latest" : var.image
+
+  local_vpc_connector = var.ip_fixe ? {
+    ip_cidr_range = "10.10.10.0/28"
+    vpc_self_link = google_compute_network.vpc_network[0].self_link
+    name          = "vpc-connector-${var.project_name}"
+  } : null
+
+  revision_annotations = var.ip_fixe ? {
+    vpcaccess_egress    = "all-traffic"
+    vpcaccess_connector = "vpc-connector-${var.project_name}"
+  } : null
 }
 
 resource "google_service_account" "service_account" {
@@ -88,7 +99,7 @@ module "google_cloud_run" {
     }
   }
   vpc_connector_create = local.local_vpc_connector
-  revision_annotations = local.revision_annotations 
+  revision_annotations = local.revision_annotations
   # dépendances : image créée par le repo et qu'elle soit dans artifact registry
   depends_on      = [google_project_service.service, github_repository.function-repo]
   timeout_seconds = var.timeout_seconds
@@ -294,17 +305,17 @@ resource "google_compute_address" "default" {
 }
 
 resource "google_compute_router" "compute_router" {
-  count    = try(var.ip_fixe ? 1 : 0, 0)
-  name     = "cr-static-ip-router"
-  network  = google_compute_network.vpc_network[0].name
-  region   = var.region
+  count   = try(var.ip_fixe ? 1 : 0, 0)
+  name    = "cr-static-ip-router"
+  network = google_compute_network.vpc_network[0].name
+  region  = var.region
 }
 
 resource "google_compute_router_nat" "default" {
-  count    = try(var.ip_fixe ? 1 : 0, 0)
-  name     = "cr-static-nat-${var.project_name}"
-  router   = google_compute_router.compute_router[0].name
-  region   = var.region
+  count  = try(var.ip_fixe ? 1 : 0, 0)
+  name   = "cr-static-nat-${var.project_name}"
+  router = google_compute_router.compute_router[0].name
+  region = var.region
 
   nat_ip_allocate_option = "MANUAL_ONLY"
   nat_ips                = [google_compute_address.default[0].self_link]

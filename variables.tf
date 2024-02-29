@@ -81,3 +81,9 @@ variable "ingress_settings" {
   type        = string
   default     = "internal-and-cloud-load-balancing"
 }
+
+variable "ip_fixe" {
+  description = "Setup an ip fix for the function"
+  type        = bool
+  default     = false
+}

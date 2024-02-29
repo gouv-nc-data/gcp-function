@@ -147,10 +147,10 @@ resource "google_cloud_scheduler_job" "job" {
     oauth_token {
       service_account_email = google_service_account.service_account.email
     }
-    uri = "https://workflowexecutions.googleapis.com/v1/${google_workflows_workflow.workflow[0].id}/executions"
+    uri = "https://workflowexecutions.googleapis.com/v1/${one(google_workflows_workflow.workflow[*].id)}/executions"
 
   }
-  depends_on = [google_project_service.service]
+  depends_on = [google_project_service.service, google_workflows_workflow.workflow]
 }
 
 ####

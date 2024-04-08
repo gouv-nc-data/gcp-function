@@ -1,4 +1,5 @@
 locals {
+  group_role = "roles/editor"
   services_to_activate = [
     "run.googleapis.com",
     "workflows.googleapis.com",
@@ -19,17 +20,6 @@ locals {
     "roles/storage.insightsCollectorService",
   ]
   image = var.image == null ? "${var.region}-docker.pkg.dev/${var.project_id}/${var.project_name}/${var.project_name}-function:latest" : var.image
-
-  local_vpc_connector = var.ip_fixe ? {
-    ip_cidr_range = "10.10.10.0/28"
-    vpc_self_link = google_compute_network.vpc_network[0].self_link
-    name          = "vpc-connector-${var.project_name}"
-  } : null
-
-  revision_annotations = var.ip_fixe ? {
-    vpcaccess_egress    = "all-traffic"
-    vpcaccess_connector = "vpc-connector-${var.project_name}"
-  } : null
 }
 
 resource "google_service_account" "service_account" {
@@ -68,10 +58,11 @@ resource "google_storage_bucket" "bucket" {
 ####
 
 resource "google_project_service" "service" {
-  for_each           = toset(local.services_to_activate)
-  project            = var.project_id
-  service            = each.value
-  disable_on_destroy = false
+  for_each                   = toset(local.services_to_activate)
+  project                    = var.project_id
+  service                    = each.value
+  disable_on_destroy         = false
+  disable_dependent_services = false
 }
 
 ####
@@ -79,13 +70,12 @@ resource "google_project_service" "service" {
 ####
 
 module "google_cloud_run" {
-  source           = "git::https://github.com/GoogleCloudPlatform/cloud-foundation-fabric//modules/cloud-run?ref=v26.0.0"
+  source           = "git::https://github.com/GoogleCloudPlatform/cloud-foundation-fabric//modules/cloud-run-v2?ref=v30.0.0"
   project_id       = var.project_id
   name             = "cloudrun-${var.project_name}-${var.project_id}"
   region           = var.region
-  ingress_settings = var.ingress_settings
   service_account  = google_service_account.service_account.email
-
+  create_job       = var.create_job
   containers = {
     "${var.project_name}" = {
       image = local.image
@@ -98,18 +88,13 @@ module "google_cloud_run" {
       env = var.env
     }
   }
-  vpc_connector_create = local.local_vpc_connector
-  revision_annotations = local.revision_annotations
-  # dépendances : image créée par le repo et qu'elle soit dans artifact registry
-  depends_on      = [google_project_service.service, github_repository.function-repo]
-  timeout_seconds = var.timeout_seconds
+  depends_on      = [google_project_service.service]
 }
 
 ####
 # Workflow
 ####
 resource "google_workflows_workflow" "workflow" {
-  count           = try(var.schedule == null ? 0 : 1, 0)
   name            = "workflow-${var.project_name}-${var.project_id}"
   region          = var.region
   project         = var.project_id
@@ -129,7 +114,6 @@ EOF
 }
 
 resource "google_cloud_scheduler_job" "job" {
-  count            = try(var.schedule == null ? 0 : 1, 0)
   name             = "schedule-${var.project_name}-${var.project_id}"
   project          = var.project_id
   description      = "Schedule du workflow pour ${var.project_name} en ${var.schedule}]"
@@ -147,10 +131,10 @@ resource "google_cloud_scheduler_job" "job" {
     oauth_token {
       service_account_email = google_service_account.service_account.email
     }
-    uri = "https://workflowexecutions.googleapis.com/v1/${one(google_workflows_workflow.workflow[*].id)}/executions"
+    uri = "https://workflowexecutions.googleapis.com/v1/${google_workflows_workflow.workflow.id}/executions"
 
   }
-  depends_on = [google_project_service.service, google_workflows_workflow.workflow]
+  depends_on = [google_project_service.service]
 }
 
 ####
@@ -196,8 +180,6 @@ resource "github_repository" "function-repo" {
     repository           = "gcp-function-template"
     include_all_branches = false
   }
-  auto_init          = false
-  archive_on_destroy = true
 }
 
 resource "google_service_account_key" "service_account_key" {
@@ -237,8 +219,7 @@ resource "github_actions_variable" "gcp_cloud_service_secret" {
   repository    = github_repository.function-repo.name
   variable_name = "GCP_CLOUD_SERVICE"
   value         = module.google_cloud_run.service_name
-  # en théorie pas besoin des dépendances car module.google_cloud_run et github_repository.function-repo sont en "References to Named Values"
-  depends_on = [github_repository.function-repo]
+  depends_on    = [github_repository.function-repo]
 }
 
 resource "github_actions_variable" "project_name" {
@@ -275,50 +256,4 @@ resource "google_monitoring_alert_policy" "errors" {
       period = "300s"
     }
   }
-}
-
-###############################
-# ip fixe publique
-###############################
-#  Activation des API
-resource "google_project_service" "service_compute" {
-  count   = try(var.ip_fixe ? 1 : 0, 0)
-  service = "compute.googleapis.com"
-}
-
-resource "google_project_service" "service_vpcaccess" {
-  count   = try(var.ip_fixe ? 1 : 0, 0)
-  service = "vpcaccess.googleapis.com"
-}
-
-resource "google_compute_network" "vpc_network" {
-  count                   = try(var.ip_fixe ? 1 : 0, 0)
-  name                    = "cloud-run-vpc-network"
-  auto_create_subnetworks = true
-  depends_on              = [google_project_service.service_compute, google_project_service.service_vpcaccess]
-}
-
-resource "google_compute_address" "default" {
-  count      = try(var.ip_fixe ? 1 : 0, 0)
-  name       = "cr-static-ip-addr"
-  depends_on = [google_project_service.service_compute, google_project_service.service_vpcaccess]
-}
-
-resource "google_compute_router" "compute_router" {
-  count   = try(var.ip_fixe ? 1 : 0, 0)
-  name    = "cr-static-ip-router"
-  network = google_compute_network.vpc_network[0].name
-  region  = var.region
-}
-
-resource "google_compute_router_nat" "default" {
-  count  = try(var.ip_fixe ? 1 : 0, 0)
-  name   = "cr-static-nat-${var.project_name}"
-  router = google_compute_router.compute_router[0].name
-  region = var.region
-
-  nat_ip_allocate_option = "MANUAL_ONLY"
-  nat_ips                = [google_compute_address.default[0].self_link]
-
-  source_subnetwork_ip_ranges_to_nat = "ALL_SUBNETWORKS_ALL_IP_RANGES"
 }

@@ -196,7 +196,7 @@ resource "github_repository" "function-repo" {
     repository           = "gcp-function-template"
     include_all_branches = false
   }
-  auto_init          = false
+  # auto_init          = false 
   archive_on_destroy = true
 }
 
@@ -208,29 +208,29 @@ resource "github_actions_secret" "gcp_credentials_secret" {
   repository      = github_repository.function-repo.name
   secret_name     = "GCP_CREDENTIALS"
   plaintext_value = google_service_account_key.service_account_key.private_key
-  depends_on = [github_repository.function-repo,
-  google_service_account_key.service_account_key]
+  # depends_on = [github_repository.function-repo,
+  # google_service_account_key.service_account_key]
 }
 
 resource "github_actions_variable" "gcp_region_secret" {
   repository    = github_repository.function-repo.name
   variable_name = "GCP_REGION"
   value         = var.region
-  depends_on    = [github_repository.function-repo]
+  # depends_on    = [github_repository.function-repo]
 }
 
 resource "github_actions_variable" "gcp_projecy_id_secret" {
   repository    = github_repository.function-repo.name
   variable_name = "GCP_PROJECT_ID"
   value         = var.project_id
-  depends_on    = [github_repository.function-repo]
+  # depends_on    = [github_repository.function-repo]
 }
 
 resource "github_actions_variable" "gcp_repository_secret" {
   repository    = github_repository.function-repo.name
   variable_name = "GCP_REPOSITORY"
   value         = google_artifact_registry_repository.project-repo.name
-  depends_on    = [github_repository.function-repo]
+  # depends_on    = [github_repository.function-repo]
 }
 
 resource "github_actions_variable" "gcp_cloud_service_secret" {
@@ -238,21 +238,21 @@ resource "github_actions_variable" "gcp_cloud_service_secret" {
   variable_name = "GCP_CLOUD_SERVICE"
   value         = module.google_cloud_run.service_name
   # en théorie pas besoin des dépendances car module.google_cloud_run et github_repository.function-repo sont en "References to Named Values"
-  depends_on = [github_repository.function-repo]
+  # depends_on = [github_repository.function-repo]
 }
 
 resource "github_actions_variable" "project_name" {
   repository    = github_repository.function-repo.name
   variable_name = "PROJECT_NAME"
   value         = var.project_name
-  depends_on    = [github_repository.function-repo]
+  # depends_on    = [github_repository.function-repo]
 }
 
 resource "github_actions_variable" "function_name_variable" {
   repository    = github_repository.function-repo.name
   variable_name = "FUNCTION_NAME"
   value         = replace(var.project_name, "-", "_")
-  depends_on    = [github_repository.function-repo]
+  # depends_on    = [github_repository.function-repo]
 }
 
 ###############################

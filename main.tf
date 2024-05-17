@@ -223,14 +223,12 @@ resource "github_actions_variable" "gcp_projecy_id_secret" {
   repository    = github_repository.function-repo.name
   variable_name = "GCP_PROJECT_ID"
   value         = var.project_id
-  # depends_on    = [github_repository.function-repo]
 }
 
 resource "github_actions_variable" "gcp_repository_secret" {
   repository    = github_repository.function-repo.name
   variable_name = "GCP_REPOSITORY"
   value         = google_artifact_registry_repository.project-repo.name
-  # depends_on    = [github_repository.function-repo]
 }
 
 resource "github_actions_variable" "gcp_cloud_service_secret" {
@@ -245,14 +243,27 @@ resource "github_actions_variable" "project_name" {
   repository    = github_repository.function-repo.name
   variable_name = "PROJECT_NAME"
   value         = var.project_name
-  # depends_on    = [github_repository.function-repo]
 }
 
 resource "github_actions_variable" "function_name_variable" {
   repository    = github_repository.function-repo.name
   variable_name = "FUNCTION_NAME"
   value         = replace(var.project_name, "-", "_")
-  # depends_on    = [github_repository.function-repo]
+}
+
+data "github_repository_file" "main_py" {
+  repository = github_repository.function-repo.name
+  branch     = "main"
+  file       = "main.py"
+  depends_on = [github_actions_variable.function_name_variable]
+}
+
+resource "github_repository_file" "main_py" {
+  repository          = github_repository.function-repo.name
+  file                = "main.py"
+  content             = replace(data.github_repository_file.content, "${APPLICATION}", data.github_actions_secret.function_name_variable.value)
+  commit_message      = "Mise à jour du contenu de main.py"
+  overwrite_on_create = true
 }
 
 ###############################

@@ -258,10 +258,10 @@ data "github_repository_file" "main_py" {
   depends_on = [github_actions_variable.function_name_variable]
 }
 
-resource "github_repository_file" "main_py" {
+resource "github_repository_file" "main_py_replace" {
   repository          = github_repository.function-repo.name
   file                = "main.py"
-  content             = replace(data.github_repository_file.main_py.content, "${APPLICATION}", replace(var.project_name, "-", "_"))
+  content             = replace(data.github_repository_file.main_py.content, "$${APPLICATION}", replace(var.project_name, "-", "_"))
   commit_message      = "Mise à jour du contenu de main.py"
   overwrite_on_create = true
 }

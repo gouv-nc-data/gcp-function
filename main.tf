@@ -223,7 +223,7 @@ resource "github_repository_file" "main_py_replace" {
 }
 
 resource "github_repository_collaborator" "maintainer" {
-  count    = length(var.maintainers) # est ce que for_each aurait fonctionné si maintainers est null ?
+  count    = var.maintainers == null ? 0 : length(var.maintainers) 
 
   repository = github_repository.function-repo.name
   username   = var.maintainers[count.index]

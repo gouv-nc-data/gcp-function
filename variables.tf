@@ -87,3 +87,9 @@ variable "ip_fixe" {
   type        = bool
   default     = false
 }
+
+variable "maintainers" {
+  description = "List of maintainers for the GH repo"
+  type        = list(string)
+  default     = null
+}

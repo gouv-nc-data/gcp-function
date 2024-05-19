@@ -173,9 +173,12 @@ resource "google_artifact_registry_repository_iam_member" "binding" {
   member     = "serviceAccount:${google_service_account.service_account.email}"
 }
 
-####
-# repo github
-####
+#---------------------------------------------------------
+# github
+#---------------------------------------------------------
+
+# github repo
+#----------------------------------
 
 terraform {
   required_providers {
@@ -204,6 +207,31 @@ resource "google_service_account_key" "service_account_key" {
   service_account_id = google_service_account.service_account.name
 }
 
+data "github_repository_file" "main_py" {
+  repository = github_repository.function-repo.name
+  branch     = "main"
+  file       = "main.py"
+  depends_on = [github_actions_variable.function_name_variable]
+}
+
+resource "github_repository_file" "main_py_replace" {
+  repository          = github_repository.function-repo.name
+  file                = "main.py"
+  content             = replace(data.github_repository_file.main_py.content, "$${APPLICATION}", replace(var.project_name, "-", "_"))
+  commit_message      = "Mise à jour du contenu de main.py"
+  overwrite_on_create = true
+}
+
+resource "github_repository_collaborator" "maintainer" {
+  count    = length(var.maintainers) # est ce que for_each aurait fonctionné si maintainers est null ?
+
+  repository = github_repository.function-repo.name
+  username   = var.maintainers[count.index]
+  permission = "maintain"
+}
+
+# github action
+#----------------------------------
 resource "github_actions_secret" "gcp_credentials_secret" {
   repository      = github_repository.function-repo.name
   secret_name     = "GCP_CREDENTIALS"
@@ -249,21 +277,6 @@ resource "github_actions_variable" "function_name_variable" {
   repository    = github_repository.function-repo.name
   variable_name = "FUNCTION_NAME"
   value         = replace(var.project_name, "-", "_")
-}
-
-data "github_repository_file" "main_py" {
-  repository = github_repository.function-repo.name
-  branch     = "main"
-  file       = "main.py"
-  depends_on = [github_actions_variable.function_name_variable]
-}
-
-resource "github_repository_file" "main_py_replace" {
-  repository          = github_repository.function-repo.name
-  file                = "main.py"
-  content             = replace(data.github_repository_file.main_py.content, "$${APPLICATION}", replace(var.project_name, "-", "_"))
-  commit_message      = "Mise à jour du contenu de main.py"
-  overwrite_on_create = true
 }
 
 ###############################

@@ -102,11 +102,9 @@ module "google_cloud_run" {
   revision_annotations = local.revision_annotations
   timeout_seconds      = var.timeout_seconds
 
-  # dépendances : ça plante quand meme mais après avoir instancié le repo et donc lancé le build
   depends_on = [
     google_project_service.service,
-    github_repository.function-repo,
-    github_repository_file.main_py_replace
+    github_repository.function-repo
   ]
 
 }

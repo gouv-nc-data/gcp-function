@@ -211,7 +211,12 @@ data "github_repository_file" "main_py" {
   repository = github_repository.function-repo.name
   branch     = "main"
   file       = "main.py"
-  depends_on = [github_actions_variable.function_name_variable, github_actions_variable.gcp_repository_secret ]
+  # dependances pour que le contexte du wf qui se déclenche suite au commit puisse finir son build
+  depends_on = [
+    github_actions_variable.function_name_variable,
+    github_actions_variable.gcp_repository_secret,
+    github_actions_variable.gcp_cloud_service_secret
+  ]
 }
 
 resource "github_repository_file" "main_py_replace" {
@@ -223,7 +228,7 @@ resource "github_repository_file" "main_py_replace" {
 }
 
 resource "github_repository_collaborator" "maintainer" {
-  count    = var.maintainers == null ? 0 : length(var.maintainers) 
+  count = var.maintainers == null ? 0 : length(var.maintainers)
 
   repository = github_repository.function-repo.name
   username   = var.maintainers[count.index]
@@ -236,15 +241,12 @@ resource "github_actions_secret" "gcp_credentials_secret" {
   repository      = github_repository.function-repo.name
   secret_name     = "GCP_CREDENTIALS"
   plaintext_value = google_service_account_key.service_account_key.private_key
-  # depends_on = [github_repository.function-repo,
-  # google_service_account_key.service_account_key]
 }
 
 resource "github_actions_variable" "gcp_region_secret" {
   repository    = github_repository.function-repo.name
   variable_name = "GCP_REGION"
   value         = var.region
-  # depends_on    = [github_repository.function-repo]
 }
 
 resource "github_actions_variable" "gcp_projecy_id_secret" {

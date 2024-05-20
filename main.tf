@@ -100,9 +100,15 @@ module "google_cloud_run" {
   }
   vpc_connector_create = local.local_vpc_connector
   revision_annotations = local.revision_annotations
-  # dépendances : image créée par le repo et qu'elle soit dans artifact registry
-  depends_on      = [google_project_service.service, github_repository.function-repo]
-  timeout_seconds = var.timeout_seconds
+  timeout_seconds      = var.timeout_seconds
+
+  # dépendances : ça plante quand meme mais après avoir instancié le repo et donc lancé le build
+  depends_on = [
+    google_project_service.service,
+    github_repository.function-repo,
+    github_repository_file.main_py_replace
+  ]
+
 }
 
 ####
@@ -211,12 +217,6 @@ data "github_repository_file" "main_py" {
   repository = github_repository.function-repo.name
   branch     = "main"
   file       = "main.py"
-  # dependances pour que le contexte du wf qui se déclenche suite au commit puisse finir son build
-  depends_on = [
-    github_actions_variable.function_name_variable,
-    github_actions_variable.gcp_repository_secret,
-    github_actions_variable.gcp_cloud_service_secret
-  ]
 }
 
 resource "github_repository_file" "main_py_replace" {
@@ -225,6 +225,12 @@ resource "github_repository_file" "main_py_replace" {
   content             = replace(data.github_repository_file.main_py.content, "$${APPLICATION}", replace(var.project_name, "-", "_"))
   commit_message      = "Mise à jour du contenu de main.py"
   overwrite_on_create = true
+  # dependances pour que le contexte du wf qui se déclenche suite au commit puisse finir son build
+  depends_on = [
+    github_actions_variable.function_name_variable,
+    github_actions_variable.gcp_repository_secret,
+    github_actions_variable.gcp_cloud_service_secret
+  ]
 }
 
 resource "github_repository_collaborator" "maintainer" {

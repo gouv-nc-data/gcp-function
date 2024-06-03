@@ -274,6 +274,7 @@ resource "google_monitoring_alert_policy" "errors" {
     notification_rate_limit {
       period = "300s"
     }
+    auto_close = "86400s" # 1 jour
   }
 }
 

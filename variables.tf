@@ -87,3 +87,9 @@ variable "ip_fixe" {
   type        = bool
   default     = false
 }
+
+variable "create_job" {
+  description = "Deploiement en mode service ou job (par défaut)"
+  type        = bool
+  default     = "true"
+}

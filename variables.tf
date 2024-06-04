@@ -93,3 +93,9 @@ variable "maintainers" {
   type        = list(string)
   default     = null
 }
+
+variable "create_job" {
+  description = "Deploiement en mode service ou job (par défaut)"
+  type        = bool
+  default     = "true"
+}

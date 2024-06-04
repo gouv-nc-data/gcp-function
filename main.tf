@@ -68,10 +68,11 @@ resource "google_storage_bucket" "bucket" {
 ####
 
 resource "google_project_service" "service" {
-  for_each           = toset(local.services_to_activate)
-  project            = var.project_id
-  service            = each.value
-  disable_on_destroy = false
+  for_each                   = toset(local.services_to_activate)
+  project                    = var.project_id
+  service                    = each.value
+  disable_on_destroy         = false
+  disable_dependent_services = false
 }
 
 ####
@@ -79,13 +80,14 @@ resource "google_project_service" "service" {
 ####
 
 module "google_cloud_run" {
-  source           = "git::https://github.com/GoogleCloudPlatform/cloud-foundation-fabric//modules/cloud-run?ref=v26.0.0"
+  source           = "git::https://github.com/GoogleCloudPlatform/cloud-foundation-fabric//modules/cloud-run-v2?ref=v31.1.0"
   project_id       = var.project_id
   name             = "cloudrun-${var.project_name}-${var.project_id}"
   region           = var.region
-  ingress_settings = var.ingress_settings
+  ingress          = var.create_job ? null : var.ingress_settings
   service_account  = google_service_account.service_account.email
 
+  create_job       = var.create_job
   containers = {
     "${var.project_name}" = {
       image = local.image
@@ -99,8 +101,7 @@ module "google_cloud_run" {
     }
   }
   vpc_connector_create = local.local_vpc_connector
-  revision_annotations = local.revision_annotations
-  timeout_seconds      = var.timeout_seconds
+  revision             = local.revision_annotations
 
   depends_on = [
     google_project_service.service,

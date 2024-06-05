@@ -32,6 +32,8 @@ locals {
       vpcaccess = "vpc-connector-${var.project_name}"
     }
   } : null
+
+  job_url = "https://${var.region}-run.googleapis.com/apis/run.googleapis.com/v1/namespaces/${var.project_id}/jobs/cloudrun-${var.project_name}-${var.project_id}:run"
 }
 
 resource "google_service_account" "service_account" {
@@ -124,7 +126,7 @@ resource "google_workflows_workflow" "workflow" {
   - cdf-function:
         call: http.get
         args:
-            url: ${module.google_cloud_run.service.status[0].url}
+            url: ${var.create_job ? local.job_url :  module.google_cloud_run.service.status[0].url}
             auth:
                 type: OIDC
             timeout: 1800

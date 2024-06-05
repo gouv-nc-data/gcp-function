@@ -27,8 +27,10 @@ locals {
   } : null
 
   revision_annotations = var.ip_fixe ? {
-    vpcaccess_egress    = "all-traffic"
-    vpcaccess_connector = "vpc-connector-${var.project_name}"
+    vpcaccess = {
+      egress    = "ALL_TRAFFIC"
+      vpcaccess = "vpc-connector-${var.project_name}"
+    }
   } : null
 }
 
@@ -84,10 +86,11 @@ module "google_cloud_run" {
   project_id       = var.project_id
   name             = "cloudrun-${var.project_name}-${var.project_id}"
   region           = var.region
-  ingress_settings = var.ingress_settings
+  ingress          = var.create_job ? null : var.ingress_settings
   service_account  = google_service_account.service_account.email
 
   create_job       = var.create_job
+  
   containers = {
     "${var.project_name}" = {
       image = local.image
@@ -101,10 +104,10 @@ module "google_cloud_run" {
     }
   }
   vpc_connector_create = local.local_vpc_connector
-  revision_annotations = local.revision_annotations
+  revision             = local.revision_annotations
   # dépendances : image créée par le repo et qu'elle soit dans artifact registry
   depends_on      = [google_project_service.service, github_repository.function-repo]
-  timeout_seconds = var.timeout_seconds
+  # timeout_seconds = var.timeout_seconds
 }
 
 ####

@@ -27,8 +27,10 @@ locals {
   } : null
 
   revision_annotations = var.ip_fixe ? {
-    vpcaccess_egress    = "all-traffic"
-    vpcaccess_connector = "vpc-connector-${var.project_name}"
+    vpcaccess = {
+      egress    = "ALL_TRAFFIC"
+      vpcaccess = "vpc-connector-${var.project_name}"
+    }
   } : null
 }
 
@@ -88,6 +90,7 @@ module "google_cloud_run" {
   service_account  = google_service_account.service_account.email
 
   create_job       = var.create_job
+  
   containers = {
     "${var.project_name}" = {
       image = local.image

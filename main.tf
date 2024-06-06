@@ -17,6 +17,7 @@ locals {
     "roles/workflows.invoker",
     "roles/storage.objectUser",
     "roles/storage.insightsCollectorService",
+    "roles/actions.Admin"
   ]
   image = var.image == null ? "${var.region}-docker.pkg.dev/${var.project_id}/${var.project_name}/${var.project_name}-function:latest" : var.image
 
@@ -33,7 +34,7 @@ locals {
     }
   } : null
 
-  job_url = "https://${var.region}-run.googleapis.com/apis/run.googleapis.com/v1/namespaces/${var.project_id}/jobs/cloudrun-${var.project_name}-${var.project_id}:run"
+  job_url = "https://${var.region}.googleapis.com/apis/run.googleapis.com/v1/namespaces/${var.project_id}/jobs/cloudrun-${var.project_name}-${var.project_id}:run"
 }
 
 resource "google_service_account" "service_account" {

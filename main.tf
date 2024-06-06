@@ -71,7 +71,7 @@ resource "google_storage_bucket" "bucket" {
   }
 }
 
-resource "google_storage_bucket" "bucket" {
+resource "google_storage_bucket" "bucket_cloudbuild" {
   project                     = var.project_id
   name                        = "${var.project_id}_cloudbuild"
   location                    = var.region

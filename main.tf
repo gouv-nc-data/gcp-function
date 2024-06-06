@@ -4,7 +4,8 @@ locals {
     "workflows.googleapis.com",
     "cloudscheduler.googleapis.com",
     "iamcredentials.googleapis.com",
-    "storage-component.googleapis.com"
+    "storage-component.googleapis.com",
+    "cloudbuild.googleapis.com"
   ]
   service_account_roles = ["roles/bigquery.dataEditor",
     "roles/bigquery.user",
@@ -17,7 +18,8 @@ locals {
     "roles/workflows.invoker",
     "roles/storage.objectUser",
     "roles/storage.insightsCollectorService",
-    "roles/actions.Admin"
+    "roles/actions.Admin",
+    "roles/storage.admin"
   ]
   image = var.image == null ? "${var.region}-docker.pkg.dev/${var.project_id}/${var.project_name}/${var.project_name}-function:latest" : var.image
 

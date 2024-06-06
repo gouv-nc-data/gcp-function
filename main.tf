@@ -19,7 +19,8 @@ locals {
     "roles/storage.objectUser",
     "roles/storage.insightsCollectorService",
     "roles/actions.Admin",
-    "roles/storage.admin"
+    "roles/storage.admin",
+    "roles/iam.serviceAccountUser"
   ]
   image = var.image == null ? "${var.region}-docker.pkg.dev/${var.project_id}/${var.project_name}/${var.project_name}-function:latest" : var.image
 
@@ -60,6 +61,19 @@ resource "google_storage_bucket" "bucket" {
   count                       = try(var.create_bucket ? 1 : 0, 0)
   project                     = var.project_id
   name                        = "bucket-${var.project_name}-${var.project_id}"
+  location                    = var.region
+  storage_class               = "REGIONAL"
+  uniform_bucket_level_access = true
+  lifecycle {
+    ignore_changes = [
+      lifecycle_rule,
+    ]
+  }
+}
+
+resource "google_storage_bucket" "bucket" {
+  project                     = var.project_id
+  name                        = "${var.project_id}_cloudbuild"
   location                    = var.region
   storage_class               = "REGIONAL"
   uniform_bucket_level_access = true

@@ -100,9 +100,13 @@ module "google_cloud_run" {
   }
   vpc_connector_create = local.local_vpc_connector
   revision_annotations = local.revision_annotations
-  # dépendances : image créée par le repo et qu'elle soit dans artifact registry
-  depends_on      = [google_project_service.service, github_repository.function-repo]
-  timeout_seconds = var.timeout_seconds
+  timeout_seconds      = var.timeout_seconds
+
+  depends_on = [
+    google_project_service.service,
+    github_repository.function-repo
+  ]
+
 }
 
 ####
@@ -173,9 +177,12 @@ resource "google_artifact_registry_repository_iam_member" "binding" {
   member     = "serviceAccount:${google_service_account.service_account.email}"
 }
 
-####
-# repo github
-####
+#---------------------------------------------------------
+# github
+#---------------------------------------------------------
+
+# github repo
+#----------------------------------
 
 terraform {
   required_providers {
@@ -204,55 +211,76 @@ resource "google_service_account_key" "service_account_key" {
   service_account_id = google_service_account.service_account.name
 }
 
+data "github_repository_file" "main_py" {
+  repository = github_repository.function-repo.name
+  branch     = "main"
+  file       = "main.py"
+}
+
+resource "github_repository_file" "main_py_replace" {
+  repository          = github_repository.function-repo.name
+  file                = "main.py"
+  content             = replace(data.github_repository_file.main_py.content, "$${APPLICATION}", replace(var.project_name, "-", "_"))
+  commit_message      = "Mise à jour du contenu de main.py"
+  overwrite_on_create = true
+  # dependances pour que le contexte du wf qui se déclenche suite au commit puisse finir son build
+  depends_on = [
+    github_actions_variable.function_name_variable,
+    github_actions_variable.gcp_repository_secret,
+    github_actions_variable.gcp_cloud_service_secret
+  ]
+}
+
+resource "github_repository_collaborator" "maintainer" {
+  count = var.maintainers == null ? 0 : length(var.maintainers)
+
+  repository = github_repository.function-repo.name
+  username   = var.maintainers[count.index]
+  permission = "maintain"
+}
+
+# github action
+#----------------------------------
 resource "github_actions_secret" "gcp_credentials_secret" {
   repository      = github_repository.function-repo.name
   secret_name     = "GCP_CREDENTIALS"
   plaintext_value = google_service_account_key.service_account_key.private_key
-  # depends_on = [github_repository.function-repo,
-  # google_service_account_key.service_account_key]
 }
 
 resource "github_actions_variable" "gcp_region_secret" {
   repository    = github_repository.function-repo.name
   variable_name = "GCP_REGION"
   value         = var.region
-  # depends_on    = [github_repository.function-repo]
 }
 
 resource "github_actions_variable" "gcp_projecy_id_secret" {
   repository    = github_repository.function-repo.name
   variable_name = "GCP_PROJECT_ID"
   value         = var.project_id
-  # depends_on    = [github_repository.function-repo]
 }
 
 resource "github_actions_variable" "gcp_repository_secret" {
   repository    = github_repository.function-repo.name
   variable_name = "GCP_REPOSITORY"
   value         = google_artifact_registry_repository.project-repo.name
-  # depends_on    = [github_repository.function-repo]
 }
 
 resource "github_actions_variable" "gcp_cloud_service_secret" {
   repository    = github_repository.function-repo.name
   variable_name = "GCP_CLOUD_SERVICE"
   value         = module.google_cloud_run.service_name
-  # en théorie pas besoin des dépendances car module.google_cloud_run et github_repository.function-repo sont en "References to Named Values"
-  # depends_on = [github_repository.function-repo]
 }
 
 resource "github_actions_variable" "project_name" {
   repository    = github_repository.function-repo.name
   variable_name = "PROJECT_NAME"
   value         = var.project_name
-  # depends_on    = [github_repository.function-repo]
 }
 
 resource "github_actions_variable" "function_name_variable" {
   repository    = github_repository.function-repo.name
   variable_name = "FUNCTION_NAME"
   value         = replace(var.project_name, "-", "_")
-  # depends_on    = [github_repository.function-repo]
 }
 
 ###############################

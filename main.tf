@@ -128,12 +128,18 @@ module "google_cloud_run" {
   }
   vpc_connector_create = local.local_vpc_connector
   revision             = local.revision_annotations
+<<<<<<< HEAD
 
   depends_on = [
     google_project_service.service,
     github_repository.function-repo
   ]
 
+=======
+  # dépendances : image créée par le repo et qu'elle soit dans artifact registry
+  depends_on      = [google_project_service.service, github_repository.function-repo]
+  # timeout_seconds = var.timeout_seconds
+>>>>>>> b9cb3d0ed7a58e174dc03af4a3ed2a8de18b4e88
 }
 
 ####
@@ -296,7 +302,8 @@ resource "github_actions_variable" "gcp_repository_secret" {
   value         = google_artifact_registry_repository.project-repo.name
 }
 
-resource "github_actions_variable" "gcp_cloud_service_secret" {
+
+resource "github_actions_variable" "gcp_service_account_variable" {
   repository    = github_repository.function-repo.name
   variable_name = "GCP_CLOUD_SERVICE"
   value         = module.google_cloud_run.service_name

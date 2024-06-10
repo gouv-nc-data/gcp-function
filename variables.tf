@@ -88,12 +88,15 @@ variable "ip_fixe" {
   default     = false
 }
 
+<<<<<<< HEAD
 variable "maintainers" {
   description = "List of maintainers for the GH repo"
   type        = list(string)
   default     = null
 }
 
+=======
+>>>>>>> b9cb3d0ed7a58e174dc03af4a3ed2a8de18b4e88
 variable "create_job" {
   description = "Deploiement en mode service ou job (par défaut)"
   type        = bool

@@ -137,7 +137,7 @@ module "google_cloud_run" {
 # Workflow
 ####
 resource "google_workflows_workflow" "workflow" {
-  count           = try(var.schedule == null ? 0 : 1, 0)
+  count           = try(var.schedule == null || var.create_job ? 0 : 1, 0)
   name            = "workflow-${var.project_name}-${var.project_id}"
   region          = var.region
   project         = var.project_id
@@ -154,6 +154,10 @@ resource "google_workflows_workflow" "workflow" {
         result: function_result
 EOF
   depends_on      = [google_project_service.service]
+}
+
+data "google_project" "project" {
+  project_id = var.project_id
 }
 
 resource "google_cloud_scheduler_job" "job" {
@@ -175,7 +179,7 @@ resource "google_cloud_scheduler_job" "job" {
     oauth_token {
       service_account_email = google_service_account.service_account.email
     }
-    uri = "https://workflowexecutions.googleapis.com/v1/${one(google_workflows_workflow.workflow[*].id)}/executions"
+    uri = var.create_job ? "https://${var.region}-run.googleapis.com/apis/run.googleapis.com/v1/namespaces/${data.google_project.project.number}/jobs/${var.project_name}-job:run" : "https://workflowexecutions.googleapis.com/v1/${one(google_workflows_workflow.workflow[*].id)}/executions" 
 
   }
   depends_on = [google_project_service.service, google_workflows_workflow.workflow]

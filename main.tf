@@ -261,6 +261,14 @@ resource "github_actions_variable" "gcp_repository_secret" {
   # depends_on    = [github_repository.function-repo]
 }
 
+
+resource "github_actions_variable" "gcp_service_account_variable" {
+  repository    = github_repository.function-repo.name
+  variable_name = "GCP_SERVICE_ACCOUNT"
+  value         = google_service_account.service_account.email
+  # depends_on    = [github_repository.function-repo]
+}
+
 resource "github_actions_variable" "project_name" {
   repository    = github_repository.function-repo.name
   variable_name = "PROJECT_NAME"
@@ -285,7 +293,7 @@ resource "google_monitoring_alert_policy" "errors" {
   conditions {
     display_name = "Error condition"
     condition_matched_log {
-      filter = "severity=ERROR AND resource.labels.service_name = ${ var.create_job ? module.google_cloud_run.job.name : module.google_cloud_run.service_name}"
+      filter = "severity=ERROR ${ var.create_job ? "" : "AND resource.labels.service_name = " + module.google_cloud_run.service_name}"
     }
   }
 

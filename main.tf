@@ -55,6 +55,15 @@ resource "google_project_iam_member" "service_account_bindings" {
   member   = "serviceAccount:${google_service_account.service_account.email}"
 }
 
+resource google_service_account_iam_binding service_account_iam_binding {
+  service_account_id = "703400684331-compute@developer.gserviceaccount.com"
+  role               = "roles/iam.serviceAccountUser"
+
+  members = [
+    "serviceAccount:${google_service_account.service_account.email}",
+  ]
+}
+
 ####
 # Bucket
 ####

@@ -304,13 +304,6 @@ resource "github_actions_variable" "gcp_service_account_variable" {
 }
 
 
-resource "github_actions_variable" "gcp_service_account_variable" {
-  repository    = github_repository.function-repo.name
-  variable_name = "GCP_SERVICE_ACCOUNT"
-  value         = google_service_account.service_account.email
-  # depends_on    = [github_repository.function-repo]
-}
-
 resource "github_actions_variable" "project_name" {
   repository    = github_repository.function-repo.name
   variable_name = "PROJECT_NAME"

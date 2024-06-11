@@ -306,7 +306,7 @@ resource "github_actions_variable" "gcp_service_account_variable" {
 resource "github_actions_variable" "gcp_cloud_service_secret" {
   repository    = github_repository.function-repo.name
   variable_name = "GCP_CLOUD_SERVICE"
-  value         = module.google_cloud_run.service_name
+  value         = module.google_cloud_run[0].service_name
 }
 
 resource "github_actions_variable" "project_name" {

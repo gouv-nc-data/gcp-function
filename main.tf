@@ -128,18 +128,12 @@ module "google_cloud_run" {
   }
   vpc_connector_create = local.local_vpc_connector
   revision             = local.revision_annotations
-<<<<<<< HEAD
 
   depends_on = [
     google_project_service.service,
     github_repository.function-repo
   ]
 
-=======
-  # dépendances : image créée par le repo et qu'elle soit dans artifact registry
-  depends_on      = [google_project_service.service, github_repository.function-repo]
-  # timeout_seconds = var.timeout_seconds
->>>>>>> b9cb3d0ed7a58e174dc03af4a3ed2a8de18b4e88
 }
 
 ####

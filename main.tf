@@ -4,7 +4,8 @@ locals {
     "workflows.googleapis.com",
     "cloudscheduler.googleapis.com",
     "iamcredentials.googleapis.com",
-    "storage-component.googleapis.com"
+    "storage-component.googleapis.com",
+    "cloudbuild.googleapis.com"
   ]
   service_account_roles = ["roles/bigquery.dataEditor",
     "roles/bigquery.user",
@@ -17,6 +18,11 @@ locals {
     "roles/workflows.invoker",
     "roles/storage.objectUser",
     "roles/storage.insightsCollectorService",
+    "roles/actions.Admin",
+    "roles/storage.admin",
+    "roles/iam.serviceAccountUser",
+    "roles/cloudbuild.builds.editor",
+    "roles/viewer"
   ]
   image = var.image == null ? "${var.region}-docker.pkg.dev/${var.project_id}/${var.project_name}/${var.project_name}-function:latest" : var.image
 
@@ -27,9 +33,13 @@ locals {
   } : null
 
   revision_annotations = var.ip_fixe ? {
-    vpcaccess_egress    = "all-traffic"
-    vpcaccess_connector = "vpc-connector-${var.project_name}"
+    vpcaccess = {
+      egress    = "ALL_TRAFFIC"
+      vpcaccess = "vpc-connector-${var.project_name}"
+    }
   } : null
+
+  job_url = "https://${var.region}.googleapis.com/apis/run.googleapis.com/v1/namespaces/${var.project_id}/jobs/cloudrun-${var.project_name}-${var.project_id}:run"
 }
 
 resource "google_service_account" "service_account" {
@@ -63,15 +73,30 @@ resource "google_storage_bucket" "bucket" {
   }
 }
 
+resource "google_storage_bucket" "bucket_cloudbuild" {
+  count                       = try(var.create_job ? 1 : 0, 0)
+  project                     = var.project_id
+  name                        = "${var.project_id}_cloudbuild"
+  location                    = var.region
+  storage_class               = "REGIONAL"
+  uniform_bucket_level_access = true
+  lifecycle {
+    ignore_changes = [
+      lifecycle_rule,
+    ]
+  }
+}
+
 ####
 # Activate services api
 ####
 
 resource "google_project_service" "service" {
-  for_each           = toset(local.services_to_activate)
-  project            = var.project_id
-  service            = each.value
-  disable_on_destroy = false
+  for_each                   = toset(local.services_to_activate)
+  project                    = var.project_id
+  service                    = each.value
+  disable_on_destroy         = false
+  disable_dependent_services = false
 }
 
 ####
@@ -79,13 +104,16 @@ resource "google_project_service" "service" {
 ####
 
 module "google_cloud_run" {
-  source           = "git::https://github.com/GoogleCloudPlatform/cloud-foundation-fabric//modules/cloud-run?ref=v26.0.0"
+  count            = try(var.create_job ? 0 : 1, 1)
+  source           = "git::https://github.com/GoogleCloudPlatform/cloud-foundation-fabric//modules/cloud-run-v2?ref=v31.1.0"
   project_id       = var.project_id
   name             = "cloudrun-${var.project_name}-${var.project_id}"
   region           = var.region
-  ingress_settings = var.ingress_settings
+  ingress          = var.create_job ? null : var.ingress_settings
   service_account  = google_service_account.service_account.email
 
+  create_job       = var.create_job
+  
   containers = {
     "${var.project_name}" = {
       image = local.image
@@ -99,8 +127,7 @@ module "google_cloud_run" {
     }
   }
   vpc_connector_create = local.local_vpc_connector
-  revision_annotations = local.revision_annotations
-  timeout_seconds      = var.timeout_seconds
+  revision             = local.revision_annotations
 
   depends_on = [
     google_project_service.service,
@@ -113,7 +140,7 @@ module "google_cloud_run" {
 # Workflow
 ####
 resource "google_workflows_workflow" "workflow" {
-  count           = try(var.schedule == null ? 0 : 1, 0)
+  count           = try(var.schedule == null || var.create_job ? 0 : 1, 0)
   name            = "workflow-${var.project_name}-${var.project_id}"
   region          = var.region
   project         = var.project_id
@@ -123,13 +150,17 @@ resource "google_workflows_workflow" "workflow" {
   - cdf-function:
         call: http.get
         args:
-            url: ${module.google_cloud_run.service.status[0].url}
+            url: ${var.create_job ? local.job_url :  module.google_cloud_run.service.status[0].url}
             auth:
                 type: OIDC
             timeout: 1800
         result: function_result
 EOF
   depends_on      = [google_project_service.service]
+}
+
+data "google_project" "project" {
+  project_id = var.project_id
 }
 
 resource "google_cloud_scheduler_job" "job" {
@@ -151,7 +182,7 @@ resource "google_cloud_scheduler_job" "job" {
     oauth_token {
       service_account_email = google_service_account.service_account.email
     }
-    uri = "https://workflowexecutions.googleapis.com/v1/${one(google_workflows_workflow.workflow[*].id)}/executions"
+    uri = var.create_job ? "https://${var.region}-run.googleapis.com/apis/run.googleapis.com/v1/namespaces/${data.google_project.project.number}/jobs/${var.project_name}:run" : "https://workflowexecutions.googleapis.com/v1/${one(google_workflows_workflow.workflow[*].id)}/executions" 
 
   }
   depends_on = [google_project_service.service, google_workflows_workflow.workflow]
@@ -265,7 +296,15 @@ resource "github_actions_variable" "gcp_repository_secret" {
   value         = google_artifact_registry_repository.project-repo.name
 }
 
+
+resource "github_actions_variable" "gcp_service_account_variable" {
+  repository    = github_repository.function-repo.name
+  variable_name = "GCP_SERVICE_ACCOUNT"
+  value         = google_service_account.service_account.email
+}
+
 resource "github_actions_variable" "gcp_cloud_service_secret" {
+  count         = try(var.create_job ? 0 : 1, 0)
   repository    = github_repository.function-repo.name
   variable_name = "GCP_CLOUD_SERVICE"
   value         = module.google_cloud_run[0].service_name
@@ -293,7 +332,7 @@ resource "google_monitoring_alert_policy" "errors" {
   conditions {
     display_name = "Error condition"
     condition_matched_log {
-      filter = "severity=ERROR AND resource.labels.service_name = ${module.google_cloud_run.service_name}"
+      filter = "severity=ERROR ${ var.create_job ? "" : "AND resource.labels.service_name = " + module.google_cloud_run.service_name}"
     }
   }
 

@@ -1,5 +1,5 @@
 output "run_url" {
-  value = module.google_cloud_run.service.status[0].url
+  value = var.create_job ? null : module.google_cloud_run.service.status[0].url
 }
 
 output "function_sa_email" {

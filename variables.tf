@@ -79,7 +79,7 @@ variable "env" {
 variable "ingress_settings" {
   description = "Ingress settings can be one of 'all', 'internal', 'internal-and-cloud-load-balancing'(default)."
   type        = string
-  default     = "internal-and-cloud-load-balancing"
+  default     = "INGRESS_TRAFFIC_INTERNAL_LOAD_BALANCER"
 }
 
 variable "ip_fixe" {
@@ -92,4 +92,10 @@ variable "maintainers" {
   description = "List of maintainers for the GH repo"
   type        = list(string)
   default     = null
+}
+
+variable "create_job" {
+  description = "Deploiement en mode service ou job (par défaut)"
+  type        = bool
+  default     = "true"
 }

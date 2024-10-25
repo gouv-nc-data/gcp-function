@@ -234,33 +234,36 @@ resource "github_repository" "function-repo" {
     repository           = "gcp-function-template"
     include_all_branches = false
   }
-  # auto_init          = false 
   archive_on_destroy = true
 }
 
-resource "google_service_account_key" "service_account_key" {
-  service_account_id = google_service_account.service_account.name
-}
 
-data "github_repository_file" "main_py" {
-  repository = github_repository.function-repo.name
-  branch     = "main"
-  file       = "main.py"
-}
+# projet de changement du nom de la fonction par terraform, mais finalement je pense que ça ne devrait pas être ici car c'est un sujet ponctuel qui ne doit pas etre re traité à chaque exécution.
+# data "github_repository_file" "main_py" {
+#   repository = github_repository.function-repo.name
+#   branch     = "main"
+#   file       = "main.py"
+# }
 
-resource "github_repository_file" "main_py_replace" {
-  repository          = github_repository.function-repo.name
-  file                = "main.py"
-  content             = replace(data.github_repository_file.main_py.content, "$${APPLICATION}", replace(var.project_name, "-", "_"))
-  commit_message      = "Mise à jour du contenu de main.py"
-  overwrite_on_create = true
-  # dependances pour que le contexte du wf qui se déclenche suite au commit puisse finir son build
-  depends_on = [
-    github_actions_variable.function_name_variable,
-    github_actions_variable.gcp_repository_secret,
-    github_actions_variable.gcp_cloud_service_secret
-  ]
-}
+# resource "github_repository_file" "main_py_replace" {
+#   repository          = github_repository.function-repo.name
+#   file                = "main.py"
+#   content             = replace(data.github_repository_file.main_py.content, "$${APPLICATION}", replace(var.project_name, "-", "_"))
+#   commit_message      = "fix: nom de l'appli dans main.py"
+#   overwrite_on_create = true
+#   # dependances pour que le contexte du wf qui se déclenche suite au commit puisse finir son build
+#   depends_on = [
+#     # 
+#     # github_actions_variable.function_name_variable,
+#     github_actions_variable.gcp_repository_secret,
+#     github_actions_variable.gcp_cloud_service_secret
+#   ]
+
+#   lifecycle {
+#     create_before_destroy = true
+#     ignore_changes = [content]
+#   }
+# }
 
 resource "github_repository_collaborator" "maintainer" {
   count = var.maintainers == null ? 0 : length(var.maintainers)
@@ -272,6 +275,10 @@ resource "github_repository_collaborator" "maintainer" {
 
 # github action
 #----------------------------------
+resource "google_service_account_key" "service_account_key" {
+  service_account_id = google_service_account.service_account.name
+}
+
 resource "github_actions_secret" "gcp_credentials_secret" {
   repository      = github_repository.function-repo.name
   secret_name     = "GCP_CREDENTIALS"
@@ -296,7 +303,6 @@ resource "github_actions_variable" "gcp_repository_secret" {
   value         = google_artifact_registry_repository.project-repo.name
 }
 
-
 resource "github_actions_variable" "gcp_service_account_variable" {
   repository    = github_repository.function-repo.name
   variable_name = "GCP_SERVICE_ACCOUNT"
@@ -316,11 +322,12 @@ resource "github_actions_variable" "project_name" {
   value         = var.project_name
 }
 
-resource "github_actions_variable" "function_name_variable" {
-  repository    = github_repository.function-repo.name
-  variable_name = "FUNCTION_NAME"
-  value         = replace(var.project_name, "-", "_")
-}
+# cette ressources était destinée à une utilisation dans le wf du template chargé. Ca ne fonctionnait pas car le contexte du wf ne prenait pas en compte tte les var du repo.
+# resource "github_actions_variable" "function_name_variable" {
+#   repository    = github_repository.function-repo.name
+#   variable_name = "FUNCTION_NAME"
+#   value         = replace(var.project_name, "-", "_")
+# }
 
 ###############################
 # Supervision

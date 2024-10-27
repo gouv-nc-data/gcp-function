@@ -99,3 +99,10 @@ variable "create_job" {
   type        = bool
   default     = "true"
 }
+
+variable "enable_vpn" {
+  description = "Lance le job dans le subnet qui accède au vpn"
+  type        = bool
+  default     = "false"
+}
+

@@ -30,6 +30,9 @@ locals {
     ip_cidr_range = "10.10.10.0/28"
     vpc_self_link = google_compute_network.vpc_network[0].self_link
     name          = "vpc-connector-${var.project_name}"
+    } : var.enable_vpn ? {
+    name    = "vpc-connector-${var.project_name}"
+    network = "subnet-for-vpn"
   } : null
 
   revision_annotations = var.ip_fixe ? {
@@ -104,16 +107,16 @@ resource "google_project_service" "service" {
 ####
 
 module "google_cloud_run" {
-  count            = try(var.create_job ? 0 : 1, 1)
-  source           = "git::https://github.com/GoogleCloudPlatform/cloud-foundation-fabric//modules/cloud-run-v2?ref=v31.1.0"
-  project_id       = var.project_id
-  name             = "cloudrun-${var.project_name}-${var.project_id}"
-  region           = var.region
-  ingress          = var.create_job ? null : var.ingress_settings
-  service_account  = google_service_account.service_account.email
+  count           = try(var.create_job ? 0 : 1, 1)
+  source          = "git::https://github.com/GoogleCloudPlatform/cloud-foundation-fabric//modules/cloud-run-v2?ref=v34.1.0"
+  project_id      = var.project_id
+  name            = "cloudrun-${var.project_name}-${var.project_id}"
+  region          = var.region
+  ingress         = var.create_job ? null : var.ingress_settings
+  service_account = google_service_account.service_account.email
 
-  create_job       = var.create_job
-  
+  create_job = var.create_job
+
   containers = {
     "${var.project_name}" = {
       image = local.image
@@ -150,7 +153,7 @@ resource "google_workflows_workflow" "workflow" {
   - cdf-function:
         call: http.get
         args:
-            url: ${var.create_job ? local.job_url :  module.google_cloud_run.service.status[0].url}
+            url: ${var.create_job ? local.job_url : module.google_cloud_run.service.status[0].url}
             auth:
                 type: OIDC
             timeout: 1800
@@ -182,7 +185,7 @@ resource "google_cloud_scheduler_job" "job" {
     oauth_token {
       service_account_email = google_service_account.service_account.email
     }
-    uri = var.create_job ? "https://${var.region}-run.googleapis.com/apis/run.googleapis.com/v1/namespaces/${data.google_project.project.number}/jobs/${var.project_name}:run" : "https://workflowexecutions.googleapis.com/v1/${one(google_workflows_workflow.workflow[*].id)}/executions" 
+    uri = var.create_job ? "https://${var.region}-run.googleapis.com/apis/run.googleapis.com/v1/namespaces/${data.google_project.project.number}/jobs/${var.project_name}:run" : "https://workflowexecutions.googleapis.com/v1/${one(google_workflows_workflow.workflow[*].id)}/executions"
 
   }
   depends_on = [google_project_service.service, google_workflows_workflow.workflow]
@@ -339,7 +342,7 @@ resource "google_monitoring_alert_policy" "errors" {
   conditions {
     display_name = "Error condition"
     condition_matched_log {
-      filter = "severity=ERROR ${ var.create_job ? "" : "AND resource.labels.service_name = " + module.google_cloud_run.service_name}"
+      filter = "severity=ERROR ${var.create_job ? "" : "AND resource.labels.service_name = " + module.google_cloud_run.service_name}"
     }
   }
 

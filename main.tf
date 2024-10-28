@@ -313,7 +313,7 @@ resource "github_actions_variable" "gcp_service_account_variable" {
 }
 
 resource "github_actions_variable" "gcp_cloud_service_secret" {
-  # count         = try(var.create_job ? 0 : 1, 0)
+  count         = try(var.create_job ? 0 : 1, 0)
   repository    = github_repository.function-repo.name
   variable_name = "GCP_CLOUD_SERVICE"
   value         = module.google_cloud_run[0].service_name

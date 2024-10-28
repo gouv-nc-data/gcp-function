@@ -325,12 +325,11 @@ resource "github_actions_variable" "project_name" {
   value         = var.project_name
 }
 
-# cette ressources était destinée à une utilisation dans le wf du template chargé. Ca ne fonctionnait pas car le contexte du wf ne prenait pas en compte tte les var du repo.
-# resource "github_actions_variable" "function_name_variable" {
-#   repository    = github_repository.function-repo.name
-#   variable_name = "FUNCTION_NAME"
-#   value         = replace(var.project_name, "-", "_")
-# }
+resource "github_actions_variable" "function_name_variable" {
+  repository    = github_repository.function-repo.name
+  variable_name = "FUNCTION_NAME"
+  value         = replace(var.project_name, "-", "_")
+}
 
 ###############################
 # Supervision

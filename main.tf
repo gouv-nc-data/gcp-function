@@ -107,7 +107,6 @@ resource "google_project_service" "service" {
 ####
 
 module "google_cloud_run" {
-  count           = try(var.create_job ? 0 : 1, 1)
   source          = "git::https://github.com/GoogleCloudPlatform/cloud-foundation-fabric//modules/cloud-run-v2?ref=v34.1.0"
   project_id      = var.project_id
   name            = "cloudrun-${var.project_name}-${var.project_id}"

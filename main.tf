@@ -32,7 +32,7 @@ locals {
     vpc_self_link = google_compute_network.vpc_network[0].self_link
     name          = "vpc-connector-${var.project_name}"
     } : var.enable_vpn ? {
-    name    = "vpc-connector-${var.project_name}"
+    name    = "vpc-connector"
     network = "subnet-for-vpn"
   } : null
 

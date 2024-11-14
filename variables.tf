@@ -72,7 +72,7 @@ variable "cpu_limits" {
 
 variable "env" {
   description = "Variables d'environnement pour Cloud Run"
-  type        = optional(map(string))
+  type        = map(string)
   default     = null
 }
 

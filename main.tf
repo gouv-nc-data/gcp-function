@@ -125,7 +125,7 @@ module "google_cloud_run" {
           cpu    = var.cpu_limits
         }
       }
-      env = var.env
+      env = tomap(var.env)
     }
   }
   vpc_connector_create = local.local_vpc_connector

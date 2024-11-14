@@ -34,7 +34,7 @@ locals {
     } : var.enable_vpn ? {
     ip_cidr_range = "10.10.10.0/28"
     name    = "vpc-connector"
-    network = "subnet-for-vpn"
+    network = "vpc-${var.project_name}"
   } : null
 
   revision_annotations = var.ip_fixe ? {

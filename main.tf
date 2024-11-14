@@ -5,7 +5,8 @@ locals {
     "cloudscheduler.googleapis.com",
     "iamcredentials.googleapis.com",
     "storage-component.googleapis.com",
-    "cloudbuild.googleapis.com"
+    "cloudbuild.googleapis.com",
+    "vpcaccess.googleapis.com"
   ]
   service_account_roles = ["roles/bigquery.dataEditor",
     "roles/bigquery.user",

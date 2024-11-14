@@ -126,6 +126,7 @@ module "google_cloud_run" {
         }
       }
       env = var.env
+      env_from_key = var.env_from_key
     }
   }
   vpc_connector_create = local.local_vpc_connector

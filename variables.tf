@@ -76,6 +76,14 @@ variable "env" {
   default     = null
 }
 
+variable "env_from_key" {
+  description = "Variables venant de secret d'environnement pour Cloud Run"
+  type        = map(any)
+  default     = null
+}
+
+
+
 variable "ingress_settings" {
   description = "Ingress settings can be one of 'all', 'internal', 'internal-and-cloud-load-balancing'(default)."
   type        = string

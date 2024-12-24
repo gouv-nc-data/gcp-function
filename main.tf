@@ -34,8 +34,8 @@ locals {
     name          = "vpc-connector-${var.project_name}"
     } : var.enable_vpn ? {
     ip_cidr_range = "10.10.10.0/28"
-    name    = "vpc-connector"
-    network = "vpc-${var.project_id}"
+    name          = "vpc-connector"
+    network       = "vpc-${var.project_id}"
   } : null
 
   revision_annotations = var.ip_fixe ? {
@@ -128,7 +128,7 @@ module "google_cloud_run" {
           cpu    = var.cpu_limits
         }
       }
-      env = var.env
+      env          = var.env
       env_from_key = var.env_from_key
     }
   }
@@ -316,7 +316,7 @@ resource "github_actions_variable" "gcp_service_account_variable" {
 }
 
 resource "github_actions_variable" "gcp_cloud_service_secret" {
-  count         = try(var.create_job ? 0 : 1, 0)
+  # count         = try(var.create_job ? 0 : 1, 0)
   repository    = github_repository.function-repo.name
   variable_name = "GCP_CLOUD_SERVICE"
   value         = module.google_cloud_run[0].service_name

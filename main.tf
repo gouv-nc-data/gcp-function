@@ -322,11 +322,11 @@ resource "github_actions_variable" "gcp_cloud_service_secret" {
   value         = module.google_cloud_run.service_name
 }
 
-resource "github_actions_variable" "gcp_cr_idt" {
-
+resource "github_actions_variable" "gcp_cr_job_name" {
+  count         = try(var.create_job ? 1 : 0, 0)
   repository    = github_repository.function-repo.name
-  variable_name = "GCP_CR_ID"
-  value         = module.google_cloud_run.id # Fully qualified job or service id.
+  variable_name = "GCP_CR_JOB_NAME"
+  value         = module.google_cloud_run.job.name
 }
 
 resource "github_actions_variable" "project_name" {

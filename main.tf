@@ -46,7 +46,6 @@ locals {
   } : null
 
   job_url = "https://${var.region}.googleapis.com/apis/run.googleapis.com/v1/namespaces/${var.project_id}/jobs/cloudrun-${var.project_name}-${var.project_id}:run"
-  "https://${var.region}-run.googleapis.com/apis/run.googleapis.com/v1/namespaces/${data.google_project.project.number}/jobs/${var.project_name}:run"
 }
 
 resource "google_service_account" "service_account" {
@@ -171,7 +170,7 @@ data "google_project" "project" {
 }
 
 resource "google_cloud_scheduler_job" "job" {
-  count            = try(var.schedule == null ? 0 : 1, 0)
+  count = try(var.schedule == null ? 0 : 1, 0)
 
   provider         = google-beta # indiqué dans la doc
   name             = "schedule-${var.project_name}-${var.project_id}"
@@ -195,7 +194,7 @@ resource "google_cloud_scheduler_job" "job" {
 
   }
   depends_on = [google_project_service.service,
-  # google_workflows_workflow.workflow
+    # google_workflows_workflow.workflow
   ]
 }
 

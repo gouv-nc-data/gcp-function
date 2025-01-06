@@ -43,9 +43,16 @@ locals {
       egress    = "ALL_TRAFFIC"
       vpcaccess = "vpc-connector-${var.project_name}"
     }
-  } : null
+    job = {
+      max_retries = 1
+    }
+    } : {
+    job = {
+      max_retries = 1
+    }
+  }
 
-  job_url = "https://${var.region}.googleapis.com/apis/run.googleapis.com/v1/namespaces/${var.project_id}/jobs/cloudrun-${var.project_name}-${var.project_id}:run"
+  job_url = "https://${var.region}-run.googleapis.com/apis/run.googleapis.com/v1/namespaces/${data.google_project.project.number}/jobs/${module.google_cloud_run.job.name}:run"
 }
 
 resource "google_service_account" "service_account" {
@@ -190,7 +197,7 @@ resource "google_cloud_scheduler_job" "job" {
     oauth_token {
       service_account_email = google_service_account.service_account.email
     }
-    uri = var.create_job ? "https://${var.region}-run.googleapis.com/apis/run.googleapis.com/v1/namespaces/${data.google_project.project.number}/jobs/${module.google_cloud_run.job.name}:run" : "https://workflowexecutions.googleapis.com/v1/${one(google_workflows_workflow.workflow[*].id)}/executions"
+    uri = var.create_job ? local.job_url : "https://workflowexecutions.googleapis.com/v1/${one(google_workflows_workflow.workflow[*].id)}/executions"
 
   }
   depends_on = [google_project_service.service,

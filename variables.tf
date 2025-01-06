@@ -72,9 +72,17 @@ variable "cpu_limits" {
 
 variable "env" {
   description = "Variables d'environnement pour Cloud Run"
+  type        = map(string)
+  default     = null
+}
+
+variable "env_from_key" {
+  description = "Variables venant de secret d'environnement pour Cloud Run"
   type        = map(any)
   default     = null
 }
+
+
 
 variable "ingress_settings" {
   description = "Ingress settings can be one of 'all', 'internal', 'internal-and-cloud-load-balancing'(default)."
@@ -99,3 +107,10 @@ variable "create_job" {
   type        = bool
   default     = "true"
 }
+
+variable "enable_vpn" {
+  description = "Lance le job dans le subnet qui accède au vpn"
+  type        = bool
+  default     = "false"
+}
+

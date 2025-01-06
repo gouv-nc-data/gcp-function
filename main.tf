@@ -5,7 +5,8 @@ locals {
     "cloudscheduler.googleapis.com",
     "iamcredentials.googleapis.com",
     "storage-component.googleapis.com",
-    "cloudbuild.googleapis.com"
+    "cloudbuild.googleapis.com",
+    "vpcaccess.googleapis.com"
   ]
   service_account_roles = ["roles/bigquery.dataEditor",
     "roles/bigquery.user",
@@ -22,7 +23,8 @@ locals {
     "roles/storage.admin",
     "roles/iam.serviceAccountUser",
     "roles/cloudbuild.builds.editor",
-    "roles/viewer"
+    "roles/viewer",
+    "roles/secretmanager.secretAccessor"
   ]
   image = var.image == null ? "${var.region}-docker.pkg.dev/${var.project_id}/${var.project_name}/${var.project_name}-function:latest" : var.image
 
@@ -30,6 +32,10 @@ locals {
     ip_cidr_range = "10.10.10.0/28"
     vpc_self_link = google_compute_network.vpc_network[0].self_link
     name          = "vpc-connector-${var.project_name}"
+    } : var.enable_vpn ? {
+    ip_cidr_range = "10.10.10.0/28"
+    name          = "vpc-connector"
+    network       = "vpc-${var.project_id}"
   } : null
 
   revision_annotations = var.ip_fixe ? {
@@ -104,16 +110,15 @@ resource "google_project_service" "service" {
 ####
 
 module "google_cloud_run" {
-  count            = try(var.create_job ? 0 : 1, 1)
-  source           = "git::https://github.com/GoogleCloudPlatform/cloud-foundation-fabric//modules/cloud-run-v2?ref=v31.1.0"
-  project_id       = var.project_id
-  name             = "cloudrun-${var.project_name}-${var.project_id}"
-  region           = var.region
-  ingress          = var.create_job ? null : var.ingress_settings
-  service_account  = google_service_account.service_account.email
+  source          = "git::https://github.com/GoogleCloudPlatform/cloud-foundation-fabric//modules/cloud-run-v2?ref=v34.1.0"
+  project_id      = var.project_id
+  name            = "cloudrun-${var.project_name}-${var.project_id}"
+  region          = var.region
+  ingress         = var.create_job ? null : var.ingress_settings
+  service_account = google_service_account.service_account.email
 
-  create_job       = var.create_job
-  
+  create_job = var.create_job
+
   containers = {
     "${var.project_name}" = {
       image = local.image
@@ -123,7 +128,8 @@ module "google_cloud_run" {
           cpu    = var.cpu_limits
         }
       }
-      env = var.env
+      env          = var.env
+      env_from_key = var.env_from_key
     }
   }
   vpc_connector_create = local.local_vpc_connector
@@ -150,7 +156,7 @@ resource "google_workflows_workflow" "workflow" {
   - cdf-function:
         call: http.get
         args:
-            url: ${var.create_job ? local.job_url :  module.google_cloud_run.service.status[0].url}
+            url: ${var.create_job ? local.job_url : module.google_cloud_run.service.status[0].url}
             auth:
                 type: OIDC
             timeout: 1800
@@ -182,7 +188,7 @@ resource "google_cloud_scheduler_job" "job" {
     oauth_token {
       service_account_email = google_service_account.service_account.email
     }
-    uri = var.create_job ? "https://${var.region}-run.googleapis.com/apis/run.googleapis.com/v1/namespaces/${data.google_project.project.number}/jobs/${var.project_name}:run" : "https://workflowexecutions.googleapis.com/v1/${one(google_workflows_workflow.workflow[*].id)}/executions" 
+    uri = var.create_job ? "https://${var.region}-run.googleapis.com/apis/run.googleapis.com/v1/namespaces/${data.google_project.project.number}/jobs/${var.project_name}:run" : "https://workflowexecutions.googleapis.com/v1/${one(google_workflows_workflow.workflow[*].id)}/executions"
 
   }
   depends_on = [google_project_service.service, google_workflows_workflow.workflow]
@@ -313,7 +319,14 @@ resource "github_actions_variable" "gcp_cloud_service_secret" {
   count         = try(var.create_job ? 0 : 1, 0)
   repository    = github_repository.function-repo.name
   variable_name = "GCP_CLOUD_SERVICE"
-  value         = module.google_cloud_run[0].service_name
+  value         = module.google_cloud_run.service_name
+}
+
+resource "github_actions_variable" "gcp_cr_job_name" {
+  count         = try(var.create_job ? 1 : 0, 0)
+  repository    = github_repository.function-repo.name
+  variable_name = "GCP_CR_JOB_NAME"
+  value         = module.google_cloud_run.job.name
 }
 
 resource "github_actions_variable" "project_name" {
@@ -322,12 +335,11 @@ resource "github_actions_variable" "project_name" {
   value         = var.project_name
 }
 
-# cette ressources était destinée à une utilisation dans le wf du template chargé. Ca ne fonctionnait pas car le contexte du wf ne prenait pas en compte tte les var du repo.
-# resource "github_actions_variable" "function_name_variable" {
-#   repository    = github_repository.function-repo.name
-#   variable_name = "FUNCTION_NAME"
-#   value         = replace(var.project_name, "-", "_")
-# }
+resource "github_actions_variable" "function_name_variable" {
+  repository    = github_repository.function-repo.name
+  variable_name = "FUNCTION_NAME"
+  value         = replace(var.project_name, "-", "_")
+}
 
 ###############################
 # Supervision
@@ -339,7 +351,7 @@ resource "google_monitoring_alert_policy" "errors" {
   conditions {
     display_name = "Error condition"
     condition_matched_log {
-      filter = "severity=ERROR ${ var.create_job ? "" : "AND resource.labels.service_name = " + module.google_cloud_run.service_name}"
+      filter = "severity=ERROR ${var.create_job ? "" : "AND resource.labels.service_name = " + module.google_cloud_run.service_name}"
     }
   }
 

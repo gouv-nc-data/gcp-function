@@ -24,7 +24,8 @@ locals {
     "roles/iam.serviceAccountUser",
     "roles/cloudbuild.builds.editor",
     "roles/viewer",
-    "roles/secretmanager.secretAccessor"
+    "roles/secretmanager.secretAccessor",
+    "roles/logging.logWriter",
   ]
   image = var.image == null ? "${var.region}-docker.pkg.dev/${var.project_id}/${var.project_name}/${var.project_name}-function:latest" : var.image
 

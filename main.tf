@@ -53,7 +53,7 @@ locals {
     }
   }
 
-  job_url = var.create_job ? "https://${var.region}-run.googleapis.com/apis/run.googleapis.com/v1/namespaces/${data.google_project.project.number}/jobs/${module.google_cloud_run.job.name}:run" : null
+  url = var.create_job ? "https://${var.region}-run.googleapis.com/apis/run.googleapis.com/v1/namespaces/${data.google_project.project.number}/jobs/${module.google_cloud_run.job.name}:run" : "https://cloudrun-${var.project_name}-${var.project_id}.${var.region}.run.app"
 }
 
 resource "google_service_account" "service_account" {
@@ -198,7 +198,7 @@ resource "google_cloud_scheduler_job" "schedule_job_or_svc" {
     oauth_token {
       service_account_email = google_service_account.service_account.email
     }
-    uri = var.create_job ? local.job_url : module.google_cloud_run.service_uri
+    uri = local.url
 
   }
   depends_on = [google_project_service.service,
@@ -303,7 +303,7 @@ resource "github_actions_variable" "gcp_cloud_service_secret" {
   count         = try(var.create_job ? 0 : 1, 0)
   repository    = github_repository.function-repo.name
   variable_name = "GCP_CR_SVC_NAME"
-  value         = "cloudrun-${var.project_name}-${var.project_id}" # module.google_cloud_run.service_name est dependant du module
+  value         = "cloudrun-${var.project_name}-${var.project_id}" # module.google_cloud_run.service_name est dependant du module et celui ci dépend de l'image qui dépend de GCP_CR_SVC_NAME
 }
 
 resource "github_actions_variable" "gcp_cr_job_name" {

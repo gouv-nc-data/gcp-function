@@ -177,7 +177,7 @@ data "google_project" "project" {
   project_id = var.project_id
 }
 
-resource "google_cloud_scheduler" "schedule_job_or_svc" {
+resource "google_cloud_scheduler_job" "schedule_job_or_svc" {
   count = try(var.schedule == null ? 0 : 1, 0)
 
   provider         = google-beta # indiqué dans la doc

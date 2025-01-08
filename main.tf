@@ -363,7 +363,7 @@ resource "google_monitoring_alert_policy" "errors" {
   conditions {
     display_name = "Error condition"
     condition_matched_log {
-      filter = "severity=ERROR ${var.create_job ? "" : "AND resource.labels.service_name = " + module.google_cloud_run.service_name}"
+      filter = "severity=ERROR ${var.create_job ? "resource.labels.job_name=" + module.google_cloud_run.job.name : "resource.labels.service_name=" + module.google_cloud_run.service_name}"
     }
   }
 

@@ -255,34 +255,6 @@ resource "github_repository" "function-repo" {
   archive_on_destroy = true
 }
 
-
-# projet de changement du nom de la fonction par terraform, mais finalement je pense que ça ne devrait pas être ici car c'est un sujet ponctuel qui ne doit pas etre re traité à chaque exécution.
-# data "github_repository_file" "main_py" {
-#   repository = github_repository.function-repo.name
-#   branch     = "main"
-#   file       = "main.py"
-# }
-
-# resource "github_repository_file" "main_py_replace" {
-#   repository          = github_repository.function-repo.name
-#   file                = "main.py"
-#   content             = replace(data.github_repository_file.main_py.content, "$${APPLICATION}", replace(var.project_name, "-", "_"))
-#   commit_message      = "fix: nom de l'appli dans main.py"
-#   overwrite_on_create = true
-#   # dependances pour que le contexte du wf qui se déclenche suite au commit puisse finir son build
-#   depends_on = [
-#     # 
-#     # github_actions_variable.function_name_variable,
-#     github_actions_variable.gcp_repository_secret,
-#     github_actions_variable.gcp_cloud_service_secret
-#   ]
-
-#   lifecycle {
-#     create_before_destroy = true
-#     ignore_changes = [content]
-#   }
-# }
-
 resource "github_repository_collaborator" "maintainer" {
   count = var.maintainers == null ? 0 : length(var.maintainers)
 
@@ -331,14 +303,14 @@ resource "github_actions_variable" "gcp_cloud_service_secret" {
   count         = try(var.create_job ? 0 : 1, 0)
   repository    = github_repository.function-repo.name
   variable_name = "GCP_CR_SVC_NAME"
-  value         = module.google_cloud_run.service_name
+  value         = "cloudrun-${var.project_name}-${var.project_id}" # module.google_cloud_run.service_name est dependant du module
 }
 
 resource "github_actions_variable" "gcp_cr_job_name" {
   count         = try(var.create_job ? 1 : 0, 1)
   repository    = github_repository.function-repo.name
   variable_name = "GCP_CR_JOB_NAME"
-  value         = module.google_cloud_run.job.name
+  value         = "cloudrun-${var.project_name}-${var.project_id}" # module.google_cloud_run.job.name est dependant du module
 }
 
 resource "github_actions_variable" "project_name" {

@@ -53,7 +53,7 @@ locals {
     }
   }
 
-  job_url = "https://${var.region}-run.googleapis.com/apis/run.googleapis.com/v1/namespaces/${data.google_project.project.number}/jobs/${module.google_cloud_run.job.name}:run"
+  job_url = var.create_job ? "https://${var.region}-run.googleapis.com/apis/run.googleapis.com/v1/namespaces/${data.google_project.project.number}/jobs/${module.google_cloud_run.job.name}:run" : null
 }
 
 resource "google_service_account" "service_account" {

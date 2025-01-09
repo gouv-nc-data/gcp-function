@@ -53,7 +53,8 @@ locals {
     }
   }
   gh_repo_template = va.create_job ? "gcp-cloud-run-job-template" : "gcp-cloud-run-service-template"
-  url = var.create_job ? "https://${var.region}-run.googleapis.com/apis/run.googleapis.com/v1/namespaces/${data.google_project.project.number}/jobs/${module.google_cloud_run.job.name}:run" : "https://cloudrun-${var.project_name}-${var.project_id}.${var.region}.run.app"
+
+  # url = var.create_job ? "https://${var.region}-run.googleapis.com/apis/run.googleapis.com/v1/namespaces/${data.google_project.project.number}/jobs/${module.google_cloud_run.job.name}:run" : "https://cloudrun-${var.project_name}-${var.project_id}-${data.google_project.project.number}.${var.region}.run.app"
 }
 
 resource "google_service_account" "service_account" {
@@ -194,13 +195,24 @@ resource "google_cloud_scheduler_job" "schedule_job_or_svc" {
   }
 
   http_target {
-    http_method = "POST"
-    oauth_token {
-      service_account_email = google_service_account.service_account.email
-    }
-    uri = local.url
+    http_method = var.create_job ? "POST" : "GET"
+    uri         = var.create_job ? "https://${var.region}-run.googleapis.com/apis/run.googleapis.com/v1/namespaces/${data.google_project.project.number}/jobs/${module.google_cloud_run.job.name}:run" : "https://cloudrun-${var.project_name}-${var.project_id}-${data.google_project.project.number}.${var.region}.run.app"
 
+    dynamic "oauth_token" {
+      for_each = var.create_job ? [1] : []
+      content {
+        service_account_email = google_service_account.service_account.email
+      }
+    }
+
+    dynamic "oidc_token" {
+      for_each = var.create_job ? [] : [1]
+      content {
+        service_account_email = google_service_account.service_account.email
+      }
+    }
   }
+
   depends_on = [google_project_service.service,
     # google_workflows_workflow.workflow
   ]

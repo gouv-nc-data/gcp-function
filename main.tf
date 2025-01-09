@@ -52,7 +52,7 @@ locals {
       max_retries = "1"
     }
   }
-  gh_repo_template = va.create_job ? "gcp-cloud-run-job-template" : "gcp-cloud-run-service-template"
+  gh_repo_template = var.create_job ? "gcp-cloud-run-job-template" : "gcp-cloud-run-service-template"
 
   # url = var.create_job ? "https://${var.region}-run.googleapis.com/apis/run.googleapis.com/v1/namespaces/${data.google_project.project.number}/jobs/${module.google_cloud_run.job.name}:run" : "https://cloudrun-${var.project_name}-${var.project_id}-${data.google_project.project.number}.${var.region}.run.app"
 }

@@ -53,8 +53,6 @@ locals {
     }
   }
   gh_repo_template = var.create_job ? "gcp-cloud-run-job-template" : "gcp-cloud-run-service-template"
-
-  # url = var.create_job ? "https://${var.region}-run.googleapis.com/apis/run.googleapis.com/v1/namespaces/${data.google_project.project.number}/jobs/${module.google_cloud_run.job.name}:run" : "https://cloudrun-${var.project_name}-${var.project_id}-${data.google_project.project.number}.${var.region}.run.app"
 }
 
 resource "google_service_account" "service_account" {
@@ -87,20 +85,6 @@ resource "google_storage_bucket" "bucket" {
     ]
   }
 }
-
-# resource "google_storage_bucket" "bucket_cloudbuild" {
-#   count                       = try(var.create_job ? 1 : 0, 0)
-#   project                     = var.project_id
-#   name                        = "${var.project_id}_cloudbuild"
-#   location                    = var.region
-#   storage_class               = "REGIONAL"
-#   uniform_bucket_level_access = true
-#   lifecycle {
-#     ignore_changes = [
-#       lifecycle_rule,
-#     ]
-#   }
-# }
 
 ####
 # Activate services api
@@ -151,29 +135,7 @@ module "google_cloud_run" {
 
 }
 
-####
-# Workflow
-####
-# resource "google_workflows_workflow" "workflow" {
-#   count           = try(var.schedule == null || var.create_job ? 0 : 1, 0)
-#   name            = "workflow-${var.project_name}-${var.project_id}"
-#   region          = var.region
-#   project         = var.project_id
-#   description     = "A workflow for ${var.project_id} data transfert"
-#   service_account = google_service_account.service_account.id
-#   source_contents = <<-EOF
-#   - cdf-function:
-#         call: http.get
-#         args:
-#             url: ${var.create_job ? local.job_url : module.google_cloud_run.service.status[0].url}
-#             auth:
-#                 type: OIDC
-#             timeout: 1800
-#         result: function_result
-# EOF
-#   depends_on      = [google_project_service.service]
-# }
-
+# for project number
 data "google_project" "project" {
   project_id = var.project_id
 }
@@ -213,9 +175,7 @@ resource "google_cloud_scheduler_job" "schedule_job_or_svc" {
     }
   }
 
-  depends_on = [google_project_service.service,
-    # google_workflows_workflow.workflow
-  ]
+  depends_on = [google_project_service.service]
 }
 
 ####
@@ -271,7 +231,7 @@ resource "github_repository_collaborator" "maintainer" {
   count = var.maintainers == null ? 0 : length(var.maintainers)
 
   repository = github_repository.function-repo.name
-  username   = var.maintainers[count.index]
+  username   = var.maintainers[count.index] # pas de mail
   permission = "maintain"
 }
 
@@ -330,12 +290,6 @@ resource "github_actions_variable" "project_name" {
   variable_name = "PROJECT_NAME"
   value         = var.project_name
 }
-
-# resource "github_actions_variable" "function_name_variable" {
-#   repository    = github_repository.function-repo.name
-#   variable_name = "FUNCTION_NAME"
-#   value         = replace(var.project_name, "-", "_")
-# }
 
 ###############################
 # Supervision

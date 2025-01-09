@@ -52,7 +52,7 @@ locals {
       max_retries = "1"
     }
   }
-
+  gh_repo_template = va.create_job ? "gcp-cloud-run-job-template" : "gcp-cloud-run-service-template"
   url = var.create_job ? "https://${var.region}-run.googleapis.com/apis/run.googleapis.com/v1/namespaces/${data.google_project.project.number}/jobs/${module.google_cloud_run.job.name}:run" : "https://cloudrun-${var.project_name}-${var.project_id}.${var.region}.run.app"
 }
 
@@ -249,7 +249,7 @@ resource "github_repository" "function-repo" {
 
   template {
     owner                = "gouv-nc-data"
-    repository           = "gcp-function-template"
+    repository           = local.gh_repo_template
     include_all_branches = false
   }
   archive_on_destroy = true

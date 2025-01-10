@@ -24,7 +24,8 @@ locals {
     "roles/iam.serviceAccountUser",
     "roles/cloudbuild.builds.editor",
     "roles/viewer",
-    "roles/secretmanager.secretAccessor"
+    "roles/secretmanager.secretAccessor",
+    "roles/logging.logWriter",
   ]
   image = var.image == null ? "${var.region}-docker.pkg.dev/${var.project_id}/${var.project_name}/${var.project_name}-function:latest" : var.image
 
@@ -39,13 +40,19 @@ locals {
   } : null
 
   revision_annotations = var.ip_fixe ? {
-    vpcaccess = {
+    vpc_access = {
       egress    = "ALL_TRAFFIC"
-      vpcaccess = "vpc-connector-${var.project_name}"
+      connector = "vpc-connector-${var.project_name}"  # a tester
     }
-  } : null
-
-  job_url = "https://${var.region}.googleapis.com/apis/run.googleapis.com/v1/namespaces/${var.project_id}/jobs/cloudrun-${var.project_name}-${var.project_id}:run"
+    # job = {
+    #   max_retries = 0 # pas défini dans la 34.1
+    # }
+    } : {
+    # job = {
+    #   max_retries = 0 # pas défini dans la 34.1
+    # }
+  }
+  gh_repo_template = var.create_job ? "gcp-cloud-run-job-template" : "gcp-cloud-run-service-template"
 }
 
 resource "google_service_account" "service_account" {
@@ -69,20 +76,6 @@ resource "google_storage_bucket" "bucket" {
   count                       = try(var.create_bucket ? 1 : 0, 0)
   project                     = var.project_id
   name                        = "bucket-${var.project_name}-${var.project_id}"
-  location                    = var.region
-  storage_class               = "REGIONAL"
-  uniform_bucket_level_access = true
-  lifecycle {
-    ignore_changes = [
-      lifecycle_rule,
-    ]
-  }
-}
-
-resource "google_storage_bucket" "bucket_cloudbuild" {
-  count                       = try(var.create_job ? 1 : 0, 0)
-  project                     = var.project_id
-  name                        = "${var.project_id}_cloudbuild"
   location                    = var.region
   storage_class               = "REGIONAL"
   uniform_bucket_level_access = true
@@ -142,38 +135,18 @@ module "google_cloud_run" {
 
 }
 
-####
-# Workflow
-####
-resource "google_workflows_workflow" "workflow" {
-  count           = try(var.schedule == null || var.create_job ? 0 : 1, 0)
-  name            = "workflow-${var.project_name}-${var.project_id}"
-  region          = var.region
-  project         = var.project_id
-  description     = "A workflow for ${var.project_id} data transfert"
-  service_account = google_service_account.service_account.id
-  source_contents = <<-EOF
-  - cdf-function:
-        call: http.get
-        args:
-            url: ${var.create_job ? local.job_url : module.google_cloud_run.service.status[0].url}
-            auth:
-                type: OIDC
-            timeout: 1800
-        result: function_result
-EOF
-  depends_on      = [google_project_service.service]
-}
-
+# for project number
 data "google_project" "project" {
   project_id = var.project_id
 }
 
-resource "google_cloud_scheduler_job" "job" {
-  count            = try(var.schedule == null ? 0 : 1, 0)
+resource "google_cloud_scheduler_job" "schedule_job_or_svc" {
+  count = try(var.schedule == null ? 0 : 1, 0)
+
+  provider         = google-beta # indiqué dans la doc
   name             = "schedule-${var.project_name}-${var.project_id}"
   project          = var.project_id
-  description      = "Schedule du workflow pour ${var.project_name} en ${var.schedule}]"
+  description      = "Schedule du ${var.create_job ? "job" : "service"} pour ${var.project_name} en ${var.schedule}]"
   schedule         = var.schedule
   time_zone        = "Pacific/Noumea"
   attempt_deadline = "320s"
@@ -184,14 +157,25 @@ resource "google_cloud_scheduler_job" "job" {
   }
 
   http_target {
-    http_method = "POST"
-    oauth_token {
-      service_account_email = google_service_account.service_account.email
-    }
-    uri = var.create_job ? "https://${var.region}-run.googleapis.com/apis/run.googleapis.com/v1/namespaces/${data.google_project.project.number}/jobs/${var.project_name}:run" : "https://workflowexecutions.googleapis.com/v1/${one(google_workflows_workflow.workflow[*].id)}/executions"
+    http_method = var.create_job ? "POST" : "GET"
+    uri         = var.create_job ? "https://${var.region}-run.googleapis.com/apis/run.googleapis.com/v1/namespaces/${data.google_project.project.number}/jobs/${module.google_cloud_run.job.name}:run" : "https://cloudrun-${var.project_name}-${var.project_id}-${data.google_project.project.number}.${var.region}.run.app"
 
+    dynamic "oauth_token" {
+      for_each = var.create_job ? [1] : []
+      content {
+        service_account_email = google_service_account.service_account.email
+      }
+    }
+
+    dynamic "oidc_token" {
+      for_each = var.create_job ? [] : [1]
+      content {
+        service_account_email = google_service_account.service_account.email
+      }
+    }
   }
-  depends_on = [google_project_service.service, google_workflows_workflow.workflow]
+
+  depends_on = [google_project_service.service]
 }
 
 ####
@@ -237,45 +221,17 @@ resource "github_repository" "function-repo" {
 
   template {
     owner                = "gouv-nc-data"
-    repository           = "gcp-function-template"
+    repository           = local.gh_repo_template
     include_all_branches = false
   }
   archive_on_destroy = true
 }
 
-
-# projet de changement du nom de la fonction par terraform, mais finalement je pense que ça ne devrait pas être ici car c'est un sujet ponctuel qui ne doit pas etre re traité à chaque exécution.
-# data "github_repository_file" "main_py" {
-#   repository = github_repository.function-repo.name
-#   branch     = "main"
-#   file       = "main.py"
-# }
-
-# resource "github_repository_file" "main_py_replace" {
-#   repository          = github_repository.function-repo.name
-#   file                = "main.py"
-#   content             = replace(data.github_repository_file.main_py.content, "$${APPLICATION}", replace(var.project_name, "-", "_"))
-#   commit_message      = "fix: nom de l'appli dans main.py"
-#   overwrite_on_create = true
-#   # dependances pour que le contexte du wf qui se déclenche suite au commit puisse finir son build
-#   depends_on = [
-#     # 
-#     # github_actions_variable.function_name_variable,
-#     github_actions_variable.gcp_repository_secret,
-#     github_actions_variable.gcp_cloud_service_secret
-#   ]
-
-#   lifecycle {
-#     create_before_destroy = true
-#     ignore_changes = [content]
-#   }
-# }
-
 resource "github_repository_collaborator" "maintainer" {
   count = var.maintainers == null ? 0 : length(var.maintainers)
 
   repository = github_repository.function-repo.name
-  username   = var.maintainers[count.index]
+  username   = var.maintainers[count.index] # pas de mail
   permission = "maintain"
 }
 
@@ -318,27 +274,21 @@ resource "github_actions_variable" "gcp_service_account_variable" {
 resource "github_actions_variable" "gcp_cloud_service_secret" {
   count         = try(var.create_job ? 0 : 1, 0)
   repository    = github_repository.function-repo.name
-  variable_name = "GCP_CLOUD_SERVICE"
-  value         = module.google_cloud_run.service_name
+  variable_name = "GCP_CR_SVC_NAME"
+  value         = "cloudrun-${var.project_name}-${var.project_id}" # module.google_cloud_run.service_name est dependant du module et celui ci dépend de l'image qui dépend de GCP_CR_SVC_NAME
 }
 
 resource "github_actions_variable" "gcp_cr_job_name" {
-  count         = try(var.create_job ? 1 : 0, 0)
+  count         = try(var.create_job ? 1 : 0, 1)
   repository    = github_repository.function-repo.name
   variable_name = "GCP_CR_JOB_NAME"
-  value         = module.google_cloud_run.job.name
+  value         = "cloudrun-${var.project_name}-${var.project_id}" # module.google_cloud_run.job.name est dependant du module
 }
 
 resource "github_actions_variable" "project_name" {
   repository    = github_repository.function-repo.name
   variable_name = "PROJECT_NAME"
   value         = var.project_name
-}
-
-resource "github_actions_variable" "function_name_variable" {
-  repository    = github_repository.function-repo.name
-  variable_name = "FUNCTION_NAME"
-  value         = replace(var.project_name, "-", "_")
 }
 
 ###############################
@@ -351,7 +301,7 @@ resource "google_monitoring_alert_policy" "errors" {
   conditions {
     display_name = "Error condition"
     condition_matched_log {
-      filter = "severity=ERROR ${var.create_job ? "" : "AND resource.labels.service_name = " + module.google_cloud_run.service_name}"
+      filter = "severity=ERROR ${var.create_job ? format("resource.labels.job_name=%s", module.google_cloud_run.job.name) : format("resource.labels.service_name=%s", module.google_cloud_run.service_name)}"
     }
   }
 

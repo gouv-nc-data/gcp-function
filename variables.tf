@@ -85,7 +85,7 @@ variable "env_from_key" {
 
 
 variable "ingress_settings" {
-  description = "Ingress settings can be one of 'all', 'internal', 'internal-and-cloud-load-balancing'(default)."
+  description = "Ingress settings can be one of ['INGRESS_TRAFFIC_ALL', 'INGRESS_TRAFFIC_INTERNAL_ONLY', 'INGRESS_TRAFFIC_INTERNAL_LOAD_BALANCER']"
   type        = string
   default     = "INGRESS_TRAFFIC_INTERNAL_LOAD_BALANCER"
 }

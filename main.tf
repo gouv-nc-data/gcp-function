@@ -40,17 +40,17 @@ locals {
   } : null
 
   revision_annotations = var.ip_fixe ? {
-    vpcaccess = {
+    vpc_access = {
       egress    = "ALL_TRAFFIC"
-      vpcaccess = "vpc-connector-${var.project_name}"
+      connector = "vpc-connector-${var.project_name}"  # a tester
     }
-    job = {
-      max_retries = "1"
-    }
+    # job = {
+    #   max_retries = 0 # pas défini dans la 34.1
+    # }
     } : {
-    job = {
-      max_retries = "1"
-    }
+    # job = {
+    #   max_retries = 0 # pas défini dans la 34.1
+    # }
   }
   gh_repo_template = var.create_job ? "gcp-cloud-run-job-template" : "gcp-cloud-run-service-template"
 }

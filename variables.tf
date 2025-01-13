@@ -82,8 +82,6 @@ variable "env_from_key" {
   default     = null
 }
 
-
-
 variable "ingress_settings" {
   description = "Ingress settings can be one of ['INGRESS_TRAFFIC_ALL', 'INGRESS_TRAFFIC_INTERNAL_ONLY', 'INGRESS_TRAFFIC_INTERNAL_LOAD_BALANCER']"
   type        = string
@@ -109,8 +107,20 @@ variable "create_job" {
 }
 
 variable "enable_vpn" {
-  description = "Lance le job dans le subnet qui accède au vpn"
+  description = "Crée un VPC avec subnet qui accède au vpn et lance le job dedans"
   type        = bool
   default     = "false"
+}
+
+variable "vpc_access" {
+  description = "Lance le job dans un subnet déjà en place qui accède au vpn"
+  type        = bool
+  default     = "false"
+}
+
+variable "sub_name" {
+  description = "Subnet du VPC déjà en place"
+  type        = string
+  default     = "subnet-for-vpn"
 }
 

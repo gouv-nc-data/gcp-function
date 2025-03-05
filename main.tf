@@ -42,7 +42,7 @@ locals {
   revision_annotations = var.ip_fixe ? {
     vpc_access = {
       egress    = "ALL_TRAFFIC"
-      connector = "vpc-connector-${var.project_name}"  # a tester
+      connector = "vpc-connector-${var.project_name}" # a tester
     }
     # job = {
     #   max_retries = 0 # pas défini dans la 34.1

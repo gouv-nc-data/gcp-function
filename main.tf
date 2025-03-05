@@ -128,6 +128,8 @@ module "google_cloud_run" {
   vpc_connector_create = local.local_vpc_connector
   revision             = local.revision_annotations
 
+  eventarc_triggers = var.eventarc_triggers
+
   depends_on = [
     google_project_service.service,
     github_repository.function-repo

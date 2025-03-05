@@ -36,9 +36,11 @@ variable "image" {
   default     = null
 }
 
+# depreciated : not used in the code, kept for compatibility. To rm in next major release
 variable "group_name" {
   type        = string
   description = "Google groupe associé au projet"
+  default     = null
 }
 
 variable "schedule" {
@@ -114,3 +116,8 @@ variable "enable_vpn" {
   default     = "false"
 }
 
+variable "eventarc_triggers" {
+  description = "Trigger eventarc"
+  type        = object(any)
+  default     = {}
+}

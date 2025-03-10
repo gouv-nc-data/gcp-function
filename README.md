@@ -5,6 +5,9 @@ Module terraform de création de ressources Google Cloud Function pour injection
 * Bucket de transfert intermédiaire
 * Dataset BigQuery
 * TODO: Cloud Function V2
+
+Le service account créé est de la forme `sa-${var.project_name}` et doit matcher : `^[a-z](?:[-a-z0-9]***4,28***[a-z0-9])$`
+
 <!-- BEGIN_TF_DOCS -->
 ## Requirements
 
@@ -44,7 +47,6 @@ No requirements.
 | [google_storage_bucket.bucket](https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/storage_bucket) | resource |
 | [google_workflows_workflow.workflow](https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/workflows_workflow) | resource |
 
-Le service account créé est de la forme `sa-${var.project_name}` et doit matcher : `^[a-z](?:[-a-z0-9]***4,28***[a-z0-9])$`
 
 ## Inputs
 

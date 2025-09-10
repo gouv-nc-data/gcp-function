@@ -104,7 +104,7 @@ resource "google_project_service" "service" {
 ####
 
 module "google_cloud_run" {
-  source          = "git::https://github.com/GoogleCloudPlatform/cloud-foundation-fabric//modules/cloud-run-v2?ref=v44.1"
+  source          = "git::https://github.com/GoogleCloudPlatform/cloud-foundation-fabric//modules/cloud-run-v2?ref=v44.1.0"
   project_id      = var.project_id
   name            = "cloudrun-${var.project_name}-${var.project_id}"
   region          = var.region

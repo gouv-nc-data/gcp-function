@@ -75,6 +75,7 @@ No requirements.
 | <a name="input_image"></a> [image](#input\_image) | Image Cloud Run à déployer | `string` | `null` | no |
 | <a name="input_ingress_settings"></a> [ingress\_settings](#input\_ingress\_settings) | Ingress settings can be one of ['INGRESS\_TRAFFIC\_ALL', 'INGRESS\_TRAFFIC\_INTERNAL\_ONLY', 'INGRESS\_TRAFFIC\_INTERNAL\_LOAD\_BALANCER'] | `string` | `"INGRESS_TRAFFIC_INTERNAL_LOAD_BALANCER"` | no |
 | <a name="input_ip_fixe"></a> [ip\_fixe](#input\_ip\_fixe) | Setup an ip fix for the function | `bool` | `false` | no |
+| <a name="input_job_config"></a> [job\_config](#input\_job\_config) | Cloud Run Job specific configuration. | <pre>object({<br/>    max_retries = optional(number)<br/>    task_count  = optional(number)<br/>    timeout     = optional(string)<br/>  })</pre> | `{}` | no |
 | <a name="input_maintainers"></a> [maintainers](#input\_maintainers) | List of maintainers for the GH repo | `list(string)` | `null` | no |
 | <a name="input_memory_limits"></a> [memory\_limits](#input\_memory\_limits) | Mémoire maximale allouée au container https://cloud.google.com/run/docs/configuring/memory-limits?hl=fr#terraform | `string` | `"512Mi"` | no |
 | <a name="input_notification_channels"></a> [notification\_channels](#input\_notification\_channels) | canal de notification pour les alertes sur cloud run | `list(string)` | n/a | yes |

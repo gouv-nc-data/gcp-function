@@ -129,3 +129,18 @@ variable "eventarc_triggers" {
   })
   default = {}
 }
+
+variable "job_config" {
+  description = "Cloud Run Job specific configuration."
+  type = object({
+    max_retries = optional(number)
+    task_count  = optional(number)
+    timeout     = optional(string)
+  })
+  default  = {}
+  nullable = false
+  validation {
+    condition     = var.job_config.timeout == null ? true : endswith(var.job_config.timeout, "s")
+    error_message = "Timeout should follow format of number with up to nine fractional digits, ending with 's'. Example: '3.5s'."
+  }
+}

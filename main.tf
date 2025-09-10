@@ -131,6 +131,8 @@ module "google_cloud_run" {
 
   eventarc_triggers = var.eventarc_triggers
 
+  job_config = var.job_config
+
   depends_on = [
     google_project_service.service,
     github_repository.function-repo

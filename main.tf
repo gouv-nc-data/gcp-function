@@ -33,6 +33,7 @@ locals {
     ip_cidr_range = "10.10.10.0/28"
     vpc_self_link = google_compute_network.vpc_network[0].self_link
     name          = "vpc-connector-${var.project_name}"
+    network       = "cloud-run-vpc-network"
     } : var.enable_vpn ? {
     ip_cidr_range = "10.10.10.0/28"
     name          = "vpc-connector"

@@ -25,7 +25,7 @@ No requirements.
 
 | Name | Source | Version |
 |------|--------|---------|
-| <a name="module_google_cloud_run"></a> [google\_cloud\_run](#module\_google\_cloud\_run) | git::https://github.com/GoogleCloudPlatform/cloud-foundation-fabric//modules/cloud-run-v2 | v44.1 |
+| <a name="module_google_cloud_run"></a> [google\_cloud\_run](#module\_google\_cloud\_run) | git::https://github.com/GoogleCloudPlatform/cloud-foundation-fabric//modules/cloud-run-v2 | v44.1.0 |
 
 ## Resources
 

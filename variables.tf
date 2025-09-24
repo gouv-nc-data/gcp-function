@@ -84,14 +84,6 @@ variable "env_from_key" {
   default     = null
 }
 
-
-
-variable "ingress_settings" {
-  description = "Ingress settings can be one of ['INGRESS_TRAFFIC_ALL', 'INGRESS_TRAFFIC_INTERNAL_ONLY', 'INGRESS_TRAFFIC_INTERNAL_LOAD_BALANCER']"
-  type        = string
-  default     = "INGRESS_TRAFFIC_INTERNAL_LOAD_BALANCER"
-}
-
 variable "ip_fixe" {
   description = "Setup an ip fix for the function"
   type        = bool
@@ -104,30 +96,22 @@ variable "maintainers" {
   default     = null
 }
 
-variable "create_job" {
+# variable "create_job" {
+#   description = "Deploiement en mode service ou job (par défaut)"
+#   type        = bool
+#   default     = "true"
+# }
+
+variable "type" {
   description = "Deploiement en mode service ou job (par défaut)"
-  type        = bool
-  default     = "true"
+  type        = string
+  default     = "JOB" #JOB, SERVICE or WORKERPOOL
 }
 
 variable "enable_vpn" {
   description = "Lance le job dans le subnet qui accède au vpn"
   type        = bool
   default     = "false"
-}
-
-variable "eventarc_triggers" {
-  description = "Trigger eventarc"
-  type = object({
-    audit_log = optional(map(object({
-      method  = string
-      service = string
-    })))
-    pubsub                 = optional(map(string))
-    service_account_email  = optional(string)
-    service_account_create = optional(bool, false)
-  })
-  default = {}
 }
 
 variable "job_config" {
@@ -143,4 +127,39 @@ variable "job_config" {
     condition     = var.job_config.timeout == null ? true : endswith(var.job_config.timeout, "s")
     error_message = "Timeout should follow format of number with up to nine fractional digits, ending with 's'. Example: '3.5s'."
   }
+}
+
+variable "service_config" {
+  description = "Cloud Run service specific configuration options."
+  type = object({
+    custom_audiences = optional(list(string), null)
+    eventarc_triggers = optional(
+      object({
+        audit_log = optional(map(object({
+          method  = string
+          service = string
+        })))
+        pubsub = optional(map(string))
+        storage = optional(map(object({
+          bucket = string
+          path   = optional(string)
+        })))
+        service_account_email = optional(string)
+    }), {})
+    gen2_execution_environment = optional(bool, false)
+    iap_config = optional(object({
+      iam          = optional(list(string), [])
+      iam_additive = optional(list(string), [])
+    }), null)
+    ingress              = optional(string, null) # ["INGRESS_TRAFFIC_ALL", "INGRESS_TRAFFIC_INTERNAL_ONLY","INGRESS_TRAFFIC_INTERNAL_LOAD_BALANCER"]
+    invoker_iam_disabled = optional(bool, false)
+    max_concurrency      = optional(number)
+    scaling = optional(object({
+      max_instance_count = optional(number)
+      min_instance_count = optional(number)
+    }))
+    timeout = optional(string)
+  })
+  default  = {}
+  nullable = false
 }

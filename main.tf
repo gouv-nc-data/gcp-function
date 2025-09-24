@@ -53,7 +53,8 @@ locals {
     #   max_retries = 0 # pas défini dans la 34.1
     # }
   }
-  gh_repo_template = var.create_job ? "gcp-cloud-run-job-template" : "gcp-cloud-run-service-template"
+  create_job       = var.type == "JOB" ? true : false
+  gh_repo_template = local.create_job ? "gcp-cloud-run-job-template" : "gcp-cloud-run-service-template"
 }
 
 resource "google_service_account" "service_account" {
@@ -108,10 +109,9 @@ module "google_cloud_run" {
   project_id      = var.project_id
   name            = "cloudrun-${var.project_name}-${var.project_id}"
   region          = var.region
-  ingress         = var.create_job ? null : var.ingress_settings
   service_account = google_service_account.service_account.email
 
-  create_job = var.create_job
+  type = var.type
 
   containers = {
     "${var.project_name}" = {
@@ -129,15 +129,13 @@ module "google_cloud_run" {
   vpc_connector_create = local.local_vpc_connector
   revision             = local.revision_annotations
 
-  eventarc_triggers = var.eventarc_triggers
-
-  job_config = var.job_config
+  job_config     = var.job_config
+  service_config = local.create_job ? null : var.service_config
 
   depends_on = [
     google_project_service.service,
     github_repository.function-repo
   ]
-
 }
 
 # for project number
@@ -151,7 +149,7 @@ resource "google_cloud_scheduler_job" "schedule_job_or_svc" {
   provider         = google-beta # indiqué dans la doc
   name             = "schedule-${var.project_name}-${var.project_id}"
   project          = var.project_id
-  description      = "Schedule du ${var.create_job ? "job" : "service"} pour ${var.project_name} en ${var.schedule}]"
+  description      = "Schedule du ${local.create_job ? "job" : "service"} pour ${var.project_name} en ${var.schedule}]"
   schedule         = var.schedule
   time_zone        = "Pacific/Noumea"
   attempt_deadline = "320s"
@@ -162,18 +160,18 @@ resource "google_cloud_scheduler_job" "schedule_job_or_svc" {
   }
 
   http_target {
-    http_method = var.create_job ? "POST" : "GET"
-    uri         = var.create_job ? "https://${var.region}-run.googleapis.com/apis/run.googleapis.com/v1/namespaces/${data.google_project.project.number}/jobs/${module.google_cloud_run.job.name}:run" : "https://cloudrun-${var.project_name}-${var.project_id}-${data.google_project.project.number}.${var.region}.run.app"
+    http_method = local.create_job ? "POST" : "GET"
+    uri         = local.create_job ? "https://${var.region}-run.googleapis.com/apis/run.googleapis.com/v1/namespaces/${data.google_project.project.number}/jobs/${module.google_cloud_run.job.name}:run" : "https://cloudrun-${var.project_name}-${var.project_id}-${data.google_project.project.number}.${var.region}.run.app"
 
     dynamic "oauth_token" {
-      for_each = var.create_job ? [1] : []
+      for_each = local.create_job ? [1] : []
       content {
         service_account_email = google_service_account.service_account.email
       }
     }
 
     dynamic "oidc_token" {
-      for_each = var.create_job ? [] : [1]
+      for_each = local.create_job ? [] : [1]
       content {
         service_account_email = google_service_account.service_account.email
       }
@@ -277,14 +275,14 @@ resource "github_actions_variable" "gcp_service_account_variable" {
 }
 
 resource "github_actions_variable" "gcp_cloud_service_secret" {
-  count         = try(var.create_job ? 0 : 1, 0)
+  count         = try(local.create_job ? 0 : 1, 0)
   repository    = github_repository.function-repo.name
   variable_name = "GCP_CR_SVC_NAME"
   value         = "cloudrun-${var.project_name}-${var.project_id}" # module.google_cloud_run.service_name est dependant du module et celui ci dépend de l'image qui dépend de GCP_CR_SVC_NAME
 }
 
 resource "github_actions_variable" "gcp_cr_job_name" {
-  count         = try(var.create_job ? 1 : 0, 1)
+  count         = try(local.create_job ? 1 : 0, 1)
   repository    = github_repository.function-repo.name
   variable_name = "GCP_CR_JOB_NAME"
   value         = "cloudrun-${var.project_name}-${var.project_id}" # module.google_cloud_run.job.name est dependant du module
@@ -306,7 +304,7 @@ resource "google_monitoring_alert_policy" "errors" {
   conditions {
     display_name = "Error condition"
     condition_matched_log {
-      filter = "severity=ERROR ${var.create_job ? format("resource.labels.job_name=%s", module.google_cloud_run.job.name) : format("resource.labels.service_name=%s", module.google_cloud_run.service_name)}"
+      filter = "severity=ERROR ${local.create_job ? format("resource.labels.job_name=%s", module.google_cloud_run.job.name) : format("resource.labels.service_name=%s", module.google_cloud_run.service_name)}"
     }
   }
 

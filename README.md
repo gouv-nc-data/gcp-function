@@ -64,16 +64,13 @@ No requirements.
 |------|-------------|------|---------|:--------:|
 | <a name="input_cpu_limits"></a> [cpu\_limits](#input\_cpu\_limits) | cpu maximal alloué au container https://cloud.google.com/run/docs/configuring/cpu?hl=fr | `string` | `"1000m"` | no |
 | <a name="input_create_bucket"></a> [create\_bucket](#input\_create\_bucket) | Création ou non d'un bucket associé au projet | `bool` | `true` | no |
-| <a name="input_create_job"></a> [create\_job](#input\_create\_job) | Deploiement en mode service ou job (par défaut) | `bool` | `"true"` | no |
 | <a name="input_direction"></a> [direction](#input\_direction) | direction du projet | `string` | n/a | yes |
 | <a name="input_enable_vpn"></a> [enable\_vpn](#input\_enable\_vpn) | Lance le job dans le subnet qui accède au vpn | `bool` | `"false"` | no |
 | <a name="input_env"></a> [env](#input\_env) | Variables d'environnement pour Cloud Run | `map(string)` | `null` | no |
 | <a name="input_env_from_key"></a> [env\_from\_key](#input\_env\_from\_key) | Variables venant de secret d'environnement pour Cloud Run | `map(any)` | `null` | no |
-| <a name="input_eventarc_triggers"></a> [eventarc\_triggers](#input\_eventarc\_triggers) | Trigger eventarc | <pre>object({<br/>    audit_log = optional(map(object({<br/>      method  = string<br/>      service = string<br/>    })))<br/>    pubsub                 = optional(map(string))<br/>    service_account_email  = optional(string)<br/>    service_account_create = optional(bool, false)<br/>  })</pre> | `{}` | no |
 | <a name="input_function_runtime"></a> [function\_runtime](#input\_function\_runtime) | Runtime associé à la google cloud function | `string` | `"python311"` | no |
 | <a name="input_group_name"></a> [group\_name](#input\_group\_name) | Google groupe associé au projet | `string` | `null` | no |
 | <a name="input_image"></a> [image](#input\_image) | Image Cloud Run à déployer | `string` | `null` | no |
-| <a name="input_ingress_settings"></a> [ingress\_settings](#input\_ingress\_settings) | Ingress settings can be one of ['INGRESS\_TRAFFIC\_ALL', 'INGRESS\_TRAFFIC\_INTERNAL\_ONLY', 'INGRESS\_TRAFFIC\_INTERNAL\_LOAD\_BALANCER'] | `string` | `"INGRESS_TRAFFIC_INTERNAL_LOAD_BALANCER"` | no |
 | <a name="input_ip_fixe"></a> [ip\_fixe](#input\_ip\_fixe) | Setup an ip fix for the function | `bool` | `false` | no |
 | <a name="input_job_config"></a> [job\_config](#input\_job\_config) | Cloud Run Job specific configuration. | <pre>object({<br/>    max_retries = optional(number)<br/>    task_count  = optional(number)<br/>    timeout     = optional(string)<br/>  })</pre> | `{}` | no |
 | <a name="input_maintainers"></a> [maintainers](#input\_maintainers) | List of maintainers for the GH repo | `list(string)` | `null` | no |
@@ -83,7 +80,9 @@ No requirements.
 | <a name="input_project_name"></a> [project\_name](#input\_project\_name) | nom du projet | `string` | n/a | yes |
 | <a name="input_region"></a> [region](#input\_region) | n/a | `string` | `"europe-west1"` | no |
 | <a name="input_schedule"></a> [schedule](#input\_schedule) | expression cron de schedule du job | `string` | `null` | no |
+| <a name="input_service_config"></a> [service\_config](#input\_service\_config) | Cloud Run service specific configuration options. | <pre>object({<br/>    custom_audiences = optional(list(string), null)<br/>    eventarc_triggers = optional(<br/>      object({<br/>        audit_log = optional(map(object({<br/>          method  = string<br/>          service = string<br/>        })))<br/>        pubsub = optional(map(string))<br/>        storage = optional(map(object({<br/>          bucket = string<br/>          path   = optional(string)<br/>        })))<br/>        service_account_email = optional(string)<br/>    }), {})<br/>    gen2_execution_environment = optional(bool, false)<br/>    iap_config = optional(object({<br/>      iam          = optional(list(string), [])<br/>      iam_additive = optional(list(string), [])<br/>    }), null)<br/>    ingress              = optional(string, null) # ["INGRESS_TRAFFIC_ALL", "INGRESS_TRAFFIC_INTERNAL_ONLY","INGRESS_TRAFFIC_INTERNAL_LOAD_BALANCER"]<br/>    invoker_iam_disabled = optional(bool, false)<br/>    max_concurrency      = optional(number)<br/>    scaling = optional(object({<br/>      max_instance_count = optional(number)<br/>      min_instance_count = optional(number)<br/>    }))<br/>    timeout = optional(string)<br/>  })</pre> | `{}` | no |
 | <a name="input_timeout_seconds"></a> [timeout\_seconds](#input\_timeout\_seconds) | timeout d'execution de la fonction | `number` | `300` | no |
+| <a name="input_type"></a> [type](#input\_type) | Deploiement en mode service ou job (par défaut) | `string` | `"JOB"` | no |
 
 ## Outputs
 

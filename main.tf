@@ -27,7 +27,9 @@ locals {
     "roles/secretmanager.secretAccessor",
     "roles/logging.logWriter",
   ]
-  image = var.image == null ? "${var.region}-docker.pkg.dev/${var.project_id}/${var.project_name}/${var.project_name}-function:latest" : var.image
+  image                 = var.image == null ? "${var.region}-docker.pkg.dev/${var.project_id}/${var.project_name}/${var.project_name}-function:${var.image_tag}" : var.image
+  image_project_id      = var.image == null ? var.project_id : split("/", var.image)[1]
+  image_repository_name = var.image == null ? var.project_name : split("/", var.image)[2]
 
   local_vpc_connector = var.ip_fixe ? {
     ip_cidr_range = "10.10.10.0/28"
@@ -75,7 +77,8 @@ resource "google_project_iam_member" "service_account_bindings" {
 ####
 
 resource "google_storage_bucket" "bucket" {
-  count                       = try(var.create_bucket ? 1 : 0, 0)
+  count = try(var.create_bucket ? 1 : 0, 0)
+
   project                     = var.project_id
   name                        = "bucket-${var.project_name}-${var.project_id}"
   location                    = var.region
@@ -93,7 +96,8 @@ resource "google_storage_bucket" "bucket" {
 ####
 
 resource "google_project_service" "service" {
-  for_each                   = toset(local.services_to_activate)
+  for_each = toset(local.services_to_activate)
+
   project                    = var.project_id
   service                    = each.value
   disable_on_destroy         = false
@@ -185,6 +189,8 @@ resource "google_cloud_scheduler_job" "schedule_job_or_svc" {
 # Artifact registry
 ####
 resource "google_artifact_registry_repository" "project-repo" {
+  count = var.image == null ? 1 : 0
+
   project       = var.project_id
   location      = var.region
   repository_id = var.project_name
@@ -194,9 +200,9 @@ resource "google_artifact_registry_repository" "project-repo" {
 }
 
 resource "google_artifact_registry_repository_iam_member" "binding" {
-  project    = var.project_id
+  project    = local.image_project_id
   location   = var.region
-  repository = google_artifact_registry_repository.project-repo.name
+  repository = var.image == null ? google_artifact_registry_repository.project-repo.name : local.image_repository_name
   role       = "roles/artifactregistry.repoAdmin"
   member     = "serviceAccount:${google_service_account.service_account.email}"
 }
@@ -217,6 +223,8 @@ terraform {
 }
 
 resource "github_repository" "function-repo" {
+  count = var.image == null ? 1 : 0
+
   name        = "${var.direction}-${var.project_name}-function"
   description = "Dépot pour le projet ${var.project_name} de la direction ${var.direction}"
 
@@ -231,7 +239,7 @@ resource "github_repository" "function-repo" {
 }
 
 resource "github_repository_collaborator" "maintainer" {
-  count = var.maintainers == null ? 0 : length(var.maintainers)
+  count = var.maintainers == null || var.image == null ? 0 : length(var.maintainers)
 
   repository = github_repository.function-repo.name
   username   = var.maintainers[count.index] # pas de mail
@@ -241,54 +249,70 @@ resource "github_repository_collaborator" "maintainer" {
 # github action
 #----------------------------------
 resource "google_service_account_key" "service_account_key" {
+  count = var.image == null ? 1 : 0
+
   service_account_id = google_service_account.service_account.name
 }
 
 resource "github_actions_secret" "gcp_credentials_secret" {
+  count = var.image == null ? 1 : 0
+
   repository      = github_repository.function-repo.name
   secret_name     = "GCP_CREDENTIALS"
   plaintext_value = google_service_account_key.service_account_key.private_key
 }
 
 resource "github_actions_variable" "gcp_region_secret" {
+  count = var.image == null ? 1 : 0
+
   repository    = github_repository.function-repo.name
   variable_name = "GCP_REGION"
   value         = var.region
 }
 
-resource "github_actions_variable" "gcp_projecy_id_secret" {
+resource "github_actions_variable" "gcp_project_id_secret" {
+  count = var.image == null ? 1 : 0
+
   repository    = github_repository.function-repo.name
   variable_name = "GCP_PROJECT_ID"
   value         = var.project_id
 }
 
 resource "github_actions_variable" "gcp_repository_secret" {
+  count = var.image == null ? 1 : 0
+
   repository    = github_repository.function-repo.name
   variable_name = "GCP_REPOSITORY"
   value         = google_artifact_registry_repository.project-repo.name
 }
 
 resource "github_actions_variable" "gcp_service_account_variable" {
+  count = var.image == null ? 1 : 0
+
   repository    = github_repository.function-repo.name
   variable_name = "GCP_SERVICE_ACCOUNT"
   value         = google_service_account.service_account.email
 }
 
 resource "github_actions_variable" "gcp_cloud_service_secret" {
-  count         = try(local.create_job ? 0 : 1, 0)
+  count = try(local.create_job || var.image == null ? 0 : 1, 0)
+
   repository    = github_repository.function-repo.name
   variable_name = "GCP_CR_SVC_NAME"
   value         = "cloudrun-${var.project_name}-${var.project_id}" # module.google_cloud_run.service_name est dependant du module et celui ci dépend de l'image qui dépend de GCP_CR_SVC_NAME
 }
 
 resource "github_actions_variable" "gcp_cr_job_name" {
-  count         = try(local.create_job ? 1 : 0, 1)
+  count = try(local.create_job || var.image == null ? 1 : 0, 1)
+
   repository    = github_repository.function-repo.name
   variable_name = "GCP_CR_JOB_NAME"
   value         = "cloudrun-${var.project_name}-${var.project_id}" # module.google_cloud_run.job.name est dependant du module
 }
 
 resource "github_actions_variable" "project_name" {
+  count = var.image == null ? 1 : 0
+
   repository    = github_repository.function-repo.name
   variable_name = "PROJECT_NAME"
   value         = var.project_name

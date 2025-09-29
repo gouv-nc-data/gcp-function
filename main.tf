@@ -138,7 +138,7 @@ module "google_cloud_run" {
 
   depends_on = [
     google_project_service.service,
-    github_repository.function-repo
+    github_repository.function-repo[0]
   ]
 }
 
@@ -202,7 +202,7 @@ resource "google_artifact_registry_repository" "project-repo" {
 resource "google_artifact_registry_repository_iam_member" "binding" {
   project    = local.image_project_id
   location   = var.region
-  repository = var.image == null ? google_artifact_registry_repository.project-repo.name : local.image_repository_name
+  repository = var.image == null ? google_artifact_registry_repository.project-repo[0].name : local.image_repository_name
   role       = "roles/artifactregistry.repoAdmin"
   member     = "serviceAccount:${google_service_account.service_account.email}"
 }
@@ -239,9 +239,9 @@ resource "github_repository" "function-repo" {
 }
 
 resource "github_repository_collaborator" "maintainer" {
-  count = var.maintainers == null || var.image == null ? 0 : length(var.maintainers)
+  count = var.maintainers == null || var.image != null ? 0 : length(var.maintainers)
 
-  repository = github_repository.function-repo.name
+  repository = github_repository.function-repo[0].name
   username   = var.maintainers[count.index] # pas de mail
   permission = "maintain"
 }
@@ -257,7 +257,7 @@ resource "google_service_account_key" "service_account_key" {
 resource "github_actions_secret" "gcp_credentials_secret" {
   count = var.image == null ? 1 : 0
 
-  repository      = github_repository.function-repo.name
+  repository      = github_repository.function-repo[0].name
   secret_name     = "GCP_CREDENTIALS"
   plaintext_value = google_service_account_key.service_account_key.private_key
 }
@@ -265,7 +265,7 @@ resource "github_actions_secret" "gcp_credentials_secret" {
 resource "github_actions_variable" "gcp_region_secret" {
   count = var.image == null ? 1 : 0
 
-  repository    = github_repository.function-repo.name
+  repository    = github_repository.function-repo[0].name
   variable_name = "GCP_REGION"
   value         = var.region
 }
@@ -273,7 +273,7 @@ resource "github_actions_variable" "gcp_region_secret" {
 resource "github_actions_variable" "gcp_project_id_secret" {
   count = var.image == null ? 1 : 0
 
-  repository    = github_repository.function-repo.name
+  repository    = github_repository.function-repo[0].name
   variable_name = "GCP_PROJECT_ID"
   value         = var.project_id
 }
@@ -281,31 +281,31 @@ resource "github_actions_variable" "gcp_project_id_secret" {
 resource "github_actions_variable" "gcp_repository_secret" {
   count = var.image == null ? 1 : 0
 
-  repository    = github_repository.function-repo.name
+  repository    = github_repository.function-repo[0].name
   variable_name = "GCP_REPOSITORY"
-  value         = google_artifact_registry_repository.project-repo.name
+  value         = google_artifact_registry_repository.project-repo[0].name
 }
 
 resource "github_actions_variable" "gcp_service_account_variable" {
   count = var.image == null ? 1 : 0
 
-  repository    = github_repository.function-repo.name
+  repository    = github_repository.function-repo[0].name
   variable_name = "GCP_SERVICE_ACCOUNT"
   value         = google_service_account.service_account.email
 }
 
 resource "github_actions_variable" "gcp_cloud_service_secret" {
-  count = try(local.create_job || var.image == null ? 0 : 1, 0)
+  count = try(local.create_job || var.image != null ? 0 : 1, 0)
 
-  repository    = github_repository.function-repo.name
+  repository    = github_repository.function-repo[0].name
   variable_name = "GCP_CR_SVC_NAME"
   value         = "cloudrun-${var.project_name}-${var.project_id}" # module.google_cloud_run.service_name est dependant du module et celui ci dépend de l'image qui dépend de GCP_CR_SVC_NAME
 }
 
 resource "github_actions_variable" "gcp_cr_job_name" {
-  count = try(local.create_job || var.image == null ? 1 : 0, 1)
+  count = try(local.create_job && var.image == null ? 1 : 0, 1)
 
-  repository    = github_repository.function-repo.name
+  repository    = github_repository.function-repo[0].name
   variable_name = "GCP_CR_JOB_NAME"
   value         = "cloudrun-${var.project_name}-${var.project_id}" # module.google_cloud_run.job.name est dependant du module
 }
@@ -313,7 +313,7 @@ resource "github_actions_variable" "gcp_cr_job_name" {
 resource "github_actions_variable" "project_name" {
   count = var.image == null ? 1 : 0
 
-  repository    = github_repository.function-repo.name
+  repository    = github_repository.function-repo[0].name
   variable_name = "PROJECT_NAME"
   value         = var.project_name
 }

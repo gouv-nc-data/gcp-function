@@ -259,7 +259,7 @@ resource "github_actions_secret" "gcp_credentials_secret" {
 
   repository      = github_repository.function-repo[0].name
   secret_name     = "GCP_CREDENTIALS"
-  plaintext_value = google_service_account_key.service_account_key.private_key
+  plaintext_value = google_service_account_key.service_account_key[0].private_key
 }
 
 resource "github_actions_variable" "gcp_region_secret" {

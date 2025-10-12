@@ -34,7 +34,7 @@ No requirements.
 | [github_actions_secret.gcp_credentials_secret](https://registry.terraform.io/providers/integrations/github/latest/docs/resources/actions_secret) | resource |
 | [github_actions_variable.gcp_cloud_service_secret](https://registry.terraform.io/providers/integrations/github/latest/docs/resources/actions_variable) | resource |
 | [github_actions_variable.gcp_cr_job_name](https://registry.terraform.io/providers/integrations/github/latest/docs/resources/actions_variable) | resource |
-| [github_actions_variable.gcp_projecy_id_secret](https://registry.terraform.io/providers/integrations/github/latest/docs/resources/actions_variable) | resource |
+| [github_actions_variable.gcp_project_id_secret](https://registry.terraform.io/providers/integrations/github/latest/docs/resources/actions_variable) | resource |
 | [github_actions_variable.gcp_region_secret](https://registry.terraform.io/providers/integrations/github/latest/docs/resources/actions_variable) | resource |
 | [github_actions_variable.gcp_repository_secret](https://registry.terraform.io/providers/integrations/github/latest/docs/resources/actions_variable) | resource |
 | [github_actions_variable.gcp_service_account_variable](https://registry.terraform.io/providers/integrations/github/latest/docs/resources/actions_variable) | resource |
@@ -70,7 +70,8 @@ No requirements.
 | <a name="input_env_from_key"></a> [env\_from\_key](#input\_env\_from\_key) | Variables venant de secret d'environnement pour Cloud Run | `map(any)` | `null` | no |
 | <a name="input_function_runtime"></a> [function\_runtime](#input\_function\_runtime) | Runtime associé à la google cloud function | `string` | `"python311"` | no |
 | <a name="input_group_name"></a> [group\_name](#input\_group\_name) | Google groupe associé au projet | `string` | `null` | no |
-| <a name="input_image"></a> [image](#input\_image) | Image Cloud Run à déployer | `string` | `null` | no |
+| <a name="input_image"></a> [image](#input\_image) | Image Cloud Run à déployer, si présent les ressources github ne sont pas créées | `string` | `null` | no |
+| <a name="input_image_tag"></a> [image\_tag](#input\_image\_tag) | Tag de l'image Cloud Run à déployer | `string` | `"latest"` | no |
 | <a name="input_ip_fixe"></a> [ip\_fixe](#input\_ip\_fixe) | Setup an ip fix for the function | `bool` | `false` | no |
 | <a name="input_job_config"></a> [job\_config](#input\_job\_config) | Cloud Run Job specific configuration. | <pre>object({<br/>    max_retries = optional(number)<br/>    task_count  = optional(number)<br/>    timeout     = optional(string)<br/>  })</pre> | `{}` | no |
 | <a name="input_maintainers"></a> [maintainers](#input\_maintainers) | List of maintainers for the GH repo | `list(string)` | `null` | no |

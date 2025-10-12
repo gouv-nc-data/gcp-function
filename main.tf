@@ -136,6 +136,8 @@ module "google_cloud_run" {
   job_config     = var.job_config
   service_config = local.create_job ? null : var.service_config
 
+  deletion_protection = false
+
   depends_on = [
     google_project_service.service,
     github_repository.function-repo[0]

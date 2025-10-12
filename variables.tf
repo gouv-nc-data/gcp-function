@@ -32,8 +32,14 @@ variable "function_runtime" {
 
 variable "image" {
   type        = string
-  description = "Image Cloud Run à déployer"
+  description = "Image Cloud Run à déployer, si présent les ressources github ne sont pas créées"
   default     = null
+}
+
+variable "image_tag" {
+  type        = string
+  description = "Tag de l'image Cloud Run à déployer"
+  default     = "latest"
 }
 
 # depreciated : not used in the code, kept for compatibility. To rm in next major release

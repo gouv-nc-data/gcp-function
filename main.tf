@@ -147,7 +147,8 @@ module "google_cloud_run" {
 
   depends_on = [
     google_project_service.service,
-    github_repository.function-repo[0]
+    github_repository.function-repo[0],
+    google_project_iam_member.run_service_agent_artifact_reader[0]
   ]
 }
 

@@ -44,7 +44,7 @@ locals {
     } : var.enable_vpn ? {
     ip_cidr_range = "10.10.10.0/28"
     name          = "vpc-con-${var.project_name}"
-    network       = "vpc-${var.project_id}"
+    network       = var.vpn_network
     instances = {
       max = 3
       min = 2

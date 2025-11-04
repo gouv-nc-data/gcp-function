@@ -120,6 +120,16 @@ variable "enable_vpn" {
   default     = "false"
 }
 
+variable "vpn_network" {
+  description = "Nom du VPC spoke pour la connexion VPN (requis si enable_vpn = true)"
+  type        = string
+  default     = null
+  validation {
+    condition     = var.enable_vpn == false || var.vpn_network != null
+    error_message = "La variable vpn_network doit être définie quand enable_vpn est true."
+  }
+}
+
 variable "job_config" {
   description = "Cloud Run Job specific configuration."
   type = object({

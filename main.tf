@@ -66,6 +66,11 @@ locals {
   gh_repo_template = local.create_job ? "gcp-cloud-run-job-template" : "gcp-cloud-run-service-template"
 }
 
+data "google_project" "external_secret_project" {
+  count      = var.external_secret_project_id != null ? 1 : 0
+  project_id = var.external_secret_project_id
+}
+
 resource "google_service_account" "service_account" {
   account_id   = "sa-${var.project_name}"
   display_name = "Service Account created by terraform for ${var.project_id}"
@@ -77,6 +82,18 @@ resource "google_project_iam_member" "service_account_bindings" {
   project  = var.project_id
   role     = each.value
   member   = "serviceAccount:${google_service_account.service_account.email}"
+}
+
+# Accorde l'accès aux secrets externes référencés dans env_from_key
+resource "google_secret_manager_secret_iam_member" "external_secret_accessor" {
+  for_each = {
+    for k, v in var.env_from_key : k => v if var.external_secret_project_id != null && var.external_secret_project_id != var.project_id
+  }
+
+  project    = var.external_secret_project_id
+  secret_id  = each.value.secret_name
+  role       = "roles/secretmanager.secretAccessor"
+  member     = "serviceAccount:${google_service_account.service_account.email}"
 }
 
 ####
@@ -134,7 +151,12 @@ module "google_cloud_run" {
         }
       }
       env          = var.env
-      env_from_key = var.env_from_key
+      env_from_key = var.external_secret_project_id != null ? {
+        for k, v in var.env_from_key : k => {
+          secret  = "projects/${data.google_project.external_secret_project[0].number}/secrets/${v.secret_name}"
+          version = v.version
+        }
+      } : {}
     }
   }
   vpc_connector_create = local.local_vpc_connector

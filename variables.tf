@@ -85,9 +85,12 @@ variable "env" {
 }
 
 variable "env_from_key" {
-  description = "Variables venant de secret d'environnement pour Cloud Run"
-  type        = map(any)
-  default     = null
+  description = "Variables venant de secret d'environnement pour Cloud Run. La valeur est une map où la clé est le nom du secret."
+  type        = map(object({
+    secret_name  = string
+    version = optional(string, "latest")
+  }))
+  default     = {}
 }
 
 variable "ip_fixe" {
@@ -179,3 +182,10 @@ variable "service_config" {
   default  = {}
   nullable = false
 }
+
+variable "external_secret_project_id" {
+  description = "ID du projet contenant les secrets externes. Requis si env_from_key est utilisé."
+  type        = string
+  default     = "prj-dinum-p-secret-mgnt-aaf4"
+}
+

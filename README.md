@@ -54,9 +54,11 @@ No requirements.
 | [google_project_service.service](https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/project_service) | resource |
 | [google_project_service.service_compute](https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/project_service) | resource |
 | [google_project_service.service_vpcaccess](https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/project_service) | resource |
+| [google_secret_manager_secret_iam_member.external_secret_accessor](https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/secret_manager_secret_iam_member) | resource |
 | [google_service_account.service_account](https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/service_account) | resource |
 | [google_service_account_key.service_account_key](https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/service_account_key) | resource |
 | [google_storage_bucket.bucket](https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/storage_bucket) | resource |
+| [google_project.external_secret_project](https://registry.terraform.io/providers/hashicorp/google/latest/docs/data-sources/project) | data source |
 | [google_project.project](https://registry.terraform.io/providers/hashicorp/google/latest/docs/data-sources/project) | data source |
 
 ## Inputs
@@ -68,7 +70,8 @@ No requirements.
 | <a name="input_direction"></a> [direction](#input\_direction) | direction du projet | `string` | n/a | yes |
 | <a name="input_enable_vpn"></a> [enable\_vpn](#input\_enable\_vpn) | Lance le job dans le subnet qui accède au vpn | `bool` | `"false"` | no |
 | <a name="input_env"></a> [env](#input\_env) | Variables d'environnement pour Cloud Run | `map(string)` | `null` | no |
-| <a name="input_env_from_key"></a> [env\_from\_key](#input\_env\_from\_key) | Variables venant de secret d'environnement pour Cloud Run | `map(any)` | `null` | no |
+| <a name="input_env_from_key"></a> [env\_from\_key](#input\_env\_from\_key) | Variables venant de secret d'environnement pour Cloud Run. La valeur est une map où la clé est le nom du secret. | <pre>map(object({<br/>    secret_name  = string<br/>    version = optional(string, "latest")<br/>  }))</pre> | `{}` | no |
+| <a name="input_external_secret_project_id"></a> [external\_secret\_project\_id](#input\_external\_secret\_project\_id) | ID du projet contenant les secrets externes. Requis si env\_from\_key est utilisé. | `string` | `"prj-dinum-p-secret-mgnt-aaf4"` | no |
 | <a name="input_function_runtime"></a> [function\_runtime](#input\_function\_runtime) | Runtime associé à la google cloud function | `string` | `"python311"` | no |
 | <a name="input_group_name"></a> [group\_name](#input\_group\_name) | Google groupe associé au projet | `string` | `null` | no |
 | <a name="input_image"></a> [image](#input\_image) | Image Cloud Run à déployer, si présent les ressources github ne sont pas créées | `string` | `null` | no |

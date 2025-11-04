@@ -28,10 +28,8 @@ locals {
     "roles/logging.logWriter",
   ]
   image                 = var.image == null ? "${var.region}-docker.pkg.dev/${var.project_id}/${var.project_name}/${var.project_name}-function:${var.image_tag}" : var.image
-  # true si l'image provient d'un registry Google (Artifact Registry / GCR)
-  is_gcp_image          = var.image == null ? true : can(regex("gcr\\.io|(?:docker\\.)?pkg\\.dev", var.image))
-  image_project_id      = local.is_gcp_image ? (var.image == null ? var.project_id : split("/", var.image)[1]) : null
-  image_repository_name = local.is_gcp_image ? (var.image == null ? var.project_name : split("/", var.image)[2]) : null
+  image_project_id      = var.image == null ? var.project_id : split("/", var.image)[1]
+  image_repository_name = var.image == null ? var.project_name : split("/", var.image)[2]
 
   local_vpc_connector = var.ip_fixe ? {
     ip_cidr_range = "10.10.10.0/28"
@@ -211,12 +209,22 @@ resource "google_artifact_registry_repository" "project-repo" {
 }
 
 resource "google_artifact_registry_repository_iam_member" "binding" {
-  count      = local.is_gcp_image ? 1 : 0
   project    = local.image_project_id
   location   = var.region
   repository = var.image == null ? google_artifact_registry_repository.project-repo[0].name : local.image_repository_name
   role       = "roles/artifactregistry.repoAdmin"
   member     = "serviceAccount:${google_service_account.service_account.email}"
+}
+
+# Accorde à l'agent de service Cloud Run l'accès au projet de l'image
+# identité de déploiement != identité d'exécution
+resource "google_project_iam_member" "run_service_agent_artifact_reader" {
+  # Ne s'applique que si l'image est custom et dans un projet différent
+  count   = var.image != null && local.image_project_id != var.project_id ? 1 : 0
+  project = local.image_project_id
+  role    = "roles/artifactregistry.reader"
+  # L'agent de service du projet courant
+  member  = "serviceAccount:service-${data.google_project.project.number}@serverless-robot-prod.iam.gserviceaccount.com"
 }
 
 #---------------------------------------------------------

@@ -29,9 +29,8 @@ locals {
   ]
   image                 = var.image == null ? "${var.region}-docker.pkg.dev/${var.project_id}/${var.project_name}/${var.project_name}-function:${var.image_tag}" : var.image
   # true si l'image provient d'un registry Google (Artifact Registry / GCR)
-  is_gcp_image          = var.image == null ? true : can(regex("gcr\\.io|(?:docker\\.)?pkg\\.dev", var.image))
-  image_project_id      = local.is_gcp_image ? (var.image == null ? var.project_id : split("/", var.image)[1]) : null
-  image_repository_name = local.is_gcp_image ? (var.image == null ? var.project_name : split("/", var.image)[2]) : null
+  image_project_id      = var.image == null ? var.project_id : split("/", var.image)[1]
+  image_repository_name = var.image == null ? var.project_name : split("/", var.image)[2]
 
   local_vpc_connector = var.ip_fixe ? {
     ip_cidr_range = "10.10.10.0/28"
@@ -211,7 +210,6 @@ resource "google_artifact_registry_repository" "project-repo" {
 }
 
 resource "google_artifact_registry_repository_iam_member" "binding" {
-  count      = local.is_gcp_image ? 1 : 0
   project    = local.image_project_id
   location   = var.region
   repository = var.image == null ? google_artifact_registry_repository.project-repo[0].name : local.image_repository_name

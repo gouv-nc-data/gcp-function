@@ -35,7 +35,7 @@ locals {
 
   local_vpc_connector = var.ip_fixe ? {
     ip_cidr_range = "10.10.10.0/28"
-    name          = "vpc-connector-${var.project_name}-${var.project_id}"
+    name          = "vpc-con-${var.project_name}"
     network       = google_compute_network.vpc_network[0].self_link
     instances = {
       max = 3
@@ -43,7 +43,7 @@ locals {
     }
     } : var.enable_vpn ? {
     ip_cidr_range = "10.10.10.0/28"
-    name          = "vpc-connector-${var.project_name}-${var.project_id}"
+    name          = "vpc-con-${var.project_name}"
     network       = "vpc-${var.project_id}"
     instances = {
       max = 3
@@ -54,7 +54,7 @@ locals {
   revision_annotations = var.ip_fixe ? {
     vpc_access = {
       egress    = "ALL_TRAFFIC"
-      connector = "vpc-connector-${var.project_name}-${var.project_id}"
+      connector = "vpc-con-${var.project_name}"
     }
     # job = {
     #   max_retries = 0 # pas défini dans la 34.1

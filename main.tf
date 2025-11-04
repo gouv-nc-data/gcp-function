@@ -38,16 +38,16 @@ locals {
     name          = "vpc-connector-${var.project_name}"
     network       = google_compute_network.vpc_network[0].self_link
     instances = {
-      max = 1
-      min = 0
+      max = 3
+      min = 2
     }
     } : var.enable_vpn ? {
     ip_cidr_range = "10.10.10.0/28"
     name          = "vpc-connector"
     network       = "vpc-${var.project_id}"
     instances = {
-      max = 1
-      min = 0
+      max = 3
+      min = 2
     }
   } : null
 

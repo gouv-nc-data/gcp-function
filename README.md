@@ -49,13 +49,16 @@ No requirements.
 | [google_compute_router.compute_router](https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/compute_router) | resource |
 | [google_compute_router_nat.default](https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/compute_router_nat) | resource |
 | [google_monitoring_alert_policy.errors](https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/monitoring_alert_policy) | resource |
+| [google_project_iam_member.run_service_agent_artifact_reader](https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/project_iam_member) | resource |
 | [google_project_iam_member.service_account_bindings](https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/project_iam_member) | resource |
 | [google_project_service.service](https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/project_service) | resource |
 | [google_project_service.service_compute](https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/project_service) | resource |
 | [google_project_service.service_vpcaccess](https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/project_service) | resource |
+| [google_secret_manager_secret_iam_member.external_secret_accessor](https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/secret_manager_secret_iam_member) | resource |
 | [google_service_account.service_account](https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/service_account) | resource |
 | [google_service_account_key.service_account_key](https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/service_account_key) | resource |
 | [google_storage_bucket.bucket](https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/storage_bucket) | resource |
+| [google_project.external_secret_project](https://registry.terraform.io/providers/hashicorp/google/latest/docs/data-sources/project) | data source |
 | [google_project.project](https://registry.terraform.io/providers/hashicorp/google/latest/docs/data-sources/project) | data source |
 
 ## Inputs
@@ -67,7 +70,8 @@ No requirements.
 | <a name="input_direction"></a> [direction](#input\_direction) | direction du projet | `string` | n/a | yes |
 | <a name="input_enable_vpn"></a> [enable\_vpn](#input\_enable\_vpn) | Lance le job dans le subnet qui accède au vpn | `bool` | `"false"` | no |
 | <a name="input_env"></a> [env](#input\_env) | Variables d'environnement pour Cloud Run | `map(string)` | `null` | no |
-| <a name="input_env_from_key"></a> [env\_from\_key](#input\_env\_from\_key) | Variables venant de secret d'environnement pour Cloud Run | `map(any)` | `null` | no |
+| <a name="input_env_from_key"></a> [env\_from\_key](#input\_env\_from\_key) | Variables venant de secret d'environnement pour Cloud Run. La valeur est une map où la clé est le nom du secret. | <pre>map(object({<br/>    secret_name  = string<br/>    version = optional(string, "latest")<br/>  }))</pre> | `{}` | no |
+| <a name="input_external_secret_project_id"></a> [external\_secret\_project\_id](#input\_external\_secret\_project\_id) | ID du projet contenant les secrets externes. Requis si env\_from\_key est utilisé. | `string` | `"prj-dinum-p-secret-mgnt-aaf4"` | no |
 | <a name="input_function_runtime"></a> [function\_runtime](#input\_function\_runtime) | Runtime associé à la google cloud function | `string` | `"python311"` | no |
 | <a name="input_group_name"></a> [group\_name](#input\_group\_name) | Google groupe associé au projet | `string` | `null` | no |
 | <a name="input_image"></a> [image](#input\_image) | Image Cloud Run à déployer, si présent les ressources github ne sont pas créées | `string` | `null` | no |
@@ -84,6 +88,7 @@ No requirements.
 | <a name="input_service_config"></a> [service\_config](#input\_service\_config) | Cloud Run service specific configuration options. | <pre>object({<br/>    custom_audiences = optional(list(string), null)<br/>    eventarc_triggers = optional(<br/>      object({<br/>        audit_log = optional(map(object({<br/>          method  = string<br/>          service = string<br/>        })))<br/>        pubsub = optional(map(string))<br/>        storage = optional(map(object({<br/>          bucket = string<br/>          path   = optional(string)<br/>        })))<br/>        service_account_email = optional(string)<br/>    }), {})<br/>    gen2_execution_environment = optional(bool, false)<br/>    iap_config = optional(object({<br/>      iam          = optional(list(string), [])<br/>      iam_additive = optional(list(string), [])<br/>    }), null)<br/>    ingress              = optional(string, null) # ["INGRESS_TRAFFIC_ALL", "INGRESS_TRAFFIC_INTERNAL_ONLY","INGRESS_TRAFFIC_INTERNAL_LOAD_BALANCER"]<br/>    invoker_iam_disabled = optional(bool, false)<br/>    max_concurrency      = optional(number)<br/>    scaling = optional(object({<br/>      max_instance_count = optional(number)<br/>      min_instance_count = optional(number)<br/>    }))<br/>    timeout = optional(string)<br/>  })</pre> | `{}` | no |
 | <a name="input_timeout_seconds"></a> [timeout\_seconds](#input\_timeout\_seconds) | timeout d'execution de la fonction | `number` | `300` | no |
 | <a name="input_type"></a> [type](#input\_type) | Deploiement en mode service ou job (par défaut) | `string` | `"JOB"` | no |
+| <a name="input_vpn_network"></a> [vpn\_network](#input\_vpn\_network) | Nom du VPC spoke pour la connexion VPN (requis si enable\_vpn = true) | `string` | `null` | no |
 
 ## Outputs
 

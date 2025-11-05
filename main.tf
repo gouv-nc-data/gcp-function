@@ -28,7 +28,6 @@ locals {
     "roles/logging.logWriter",
   ]
   image                 = var.image == null ? "${var.region}-docker.pkg.dev/${var.project_id}/${var.project_name}/${var.project_name}-function:${var.image_tag}" : var.image
-  # true si l'image provient d'un registry Google (Artifact Registry / GCR)
   image_project_id      = var.image == null ? var.project_id : split("/", var.image)[1]
   image_repository_name = var.image == null ? var.project_name : split("/", var.image)[2]
 
@@ -67,6 +66,11 @@ locals {
   gh_repo_template = local.create_job ? "gcp-cloud-run-job-template" : "gcp-cloud-run-service-template"
 }
 
+data "google_project" "external_secret_project" {
+  count      = var.external_secret_project_id != null ? 1 : 0
+  project_id = var.external_secret_project_id
+}
+
 resource "google_service_account" "service_account" {
   account_id   = "sa-${var.project_name}"
   display_name = "Service Account created by terraform for ${var.project_id}"
@@ -78,6 +82,18 @@ resource "google_project_iam_member" "service_account_bindings" {
   project  = var.project_id
   role     = each.value
   member   = "serviceAccount:${google_service_account.service_account.email}"
+}
+
+# Accorde l'accès aux secrets externes référencés dans env_from_key
+resource "google_secret_manager_secret_iam_member" "external_secret_accessor" {
+  for_each = {
+    for k, v in var.env_from_key : k => v if var.external_secret_project_id != null && var.external_secret_project_id != var.project_id
+  }
+
+  project    = var.external_secret_project_id
+  secret_id  = each.value.secret_name
+  role       = "roles/secretmanager.secretAccessor"
+  member     = "serviceAccount:${google_service_account.service_account.email}"
 }
 
 ####
@@ -135,7 +151,12 @@ module "google_cloud_run" {
         }
       }
       env          = var.env
-      env_from_key = var.env_from_key
+      env_from_key = var.external_secret_project_id != null ? {
+        for k, v in var.env_from_key : k => {
+          secret  = "projects/${data.google_project.external_secret_project[0].number}/secrets/${v.secret_name}"
+          version = v.version
+        }
+      } : {}
     }
   }
   vpc_connector_create = local.local_vpc_connector
@@ -148,7 +169,8 @@ module "google_cloud_run" {
 
   depends_on = [
     google_project_service.service,
-    github_repository.function-repo[0]
+    github_repository.function-repo[0],
+    google_project_iam_member.run_service_agent_artifact_reader[0]
   ]
 }
 
@@ -215,6 +237,17 @@ resource "google_artifact_registry_repository_iam_member" "binding" {
   repository = var.image == null ? google_artifact_registry_repository.project-repo[0].name : local.image_repository_name
   role       = "roles/artifactregistry.repoAdmin"
   member     = "serviceAccount:${google_service_account.service_account.email}"
+}
+
+# Accorde à l'agent de service Cloud Run l'accès au projet de l'image
+# identité de déploiement != identité d'exécution
+resource "google_project_iam_member" "run_service_agent_artifact_reader" {
+  # Ne s'applique que si l'image est custom et dans un projet différent
+  count   = var.image != null && local.image_project_id != var.project_id ? 1 : 0
+  project = local.image_project_id
+  role    = "roles/artifactregistry.reader"
+  # L'agent de service du projet courant
+  member  = "serviceAccount:service-${data.google_project.project.number}@serverless-robot-prod.iam.gserviceaccount.com"
 }
 
 #---------------------------------------------------------

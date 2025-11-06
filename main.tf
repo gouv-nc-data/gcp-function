@@ -31,27 +31,29 @@ locals {
   image_project_id      = var.image == null ? var.project_id : split("/", var.image)[1]
   image_repository_name = var.image == null ? var.project_name : split("/", var.image)[2]
 
-  vpc_connector_create = var.ip_fixe ? {
-    ip_cidr_range = "10.10.10.0/28"
-    name          = "vpc-con-${var.project_name}"
-    network       = google_compute_network.vpc_network[0].self_link
-    instances = {
-      max = 3
-      min = 2
-    }
+  vpc_connector_create = (
+    var.ip_fixe ? {
+      ip_cidr_range = "10.10.10.0/28"
+      name          = "vpc-con-${var.project_name}"
+      network       = google_compute_network.vpc_network[0].self_link
+      instances = {
+        max = 3
+        min = 2
+      }
     } : var.vpc != null ? {
-    # ip_cidr_range is not applicable for existing VPC connector, keep attribute for type consistency
-    ip_cidr_range = null
-    name          = "vpc-con-${var.project_name}"
-    network       = var.vpc.name
-    subnet = {
-      name = keys(var.vpc.subnet_ids)[0]
-    }
-    instances = {
-      max = 3
-      min = 2
-    }
-  } : null
+      # ip_cidr_range is not applicable for existing VPC connector, keep attribute for type consistency
+      ip_cidr_range = null
+      name          = "vpc-con-${var.project_name}"
+      network       = var.vpc.name
+      subnet = {
+        name = keys(var.vpc.subnet_ids)[0]
+      }
+      instances = {
+        max = 3
+        min = 2
+      }
+    } : null
+  )
 
   revision_annotations = var.ip_fixe ? {
     vpc_access = {

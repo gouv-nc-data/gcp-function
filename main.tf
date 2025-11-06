@@ -40,9 +40,10 @@ locals {
       min = 2
     }
     } : var.vpc ? {
-    # ip_cidr_range = "10.10.10.0/28"
-    name    = "vpc-con-${var.project_name}"
-    network = var.vpc.name
+    # ip_cidr_range is not applicable for existing VPC connector, keep attribute for type consistency
+    ip_cidr_range = null
+    name          = "vpc-con-${var.project_name}"
+    network       = var.vpc.name
     subnet = {
       name = keys(var.vpc.subnet_ids)[0]
     }

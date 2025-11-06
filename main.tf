@@ -39,7 +39,7 @@ locals {
       max = 3
       min = 2
     }
-    } : var.vpc ? {
+    } : var.vpc != null ? {
     # ip_cidr_range is not applicable for existing VPC connector, keep attribute for type consistency
     ip_cidr_range = null
     name          = "vpc-con-${var.project_name}"

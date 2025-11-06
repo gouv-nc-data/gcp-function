@@ -86,11 +86,11 @@ variable "env" {
 
 variable "env_from_key" {
   description = "Variables venant de secret d'environnement pour Cloud Run. La valeur est une map où la clé est le nom du secret."
-  type        = map(object({
-    secret_name  = string
-    version = optional(string, "latest")
+  type = map(object({
+    secret_name = string
+    version     = optional(string, "latest")
   }))
-  default     = {}
+  default = {}
 }
 
 variable "ip_fixe" {
@@ -117,20 +117,25 @@ variable "type" {
   default     = "JOB" #JOB, SERVICE or WORKERPOOL
 }
 
-variable "enable_vpn" {
-  description = "Lance le job dans le subnet qui accède au vpn"
-  type        = bool
-  default     = "false"
-}
+# variable "enable_vpn" {
+#   description = "Lance le job dans le subnet qui accède au vpn"
+#   type        = bool
+#   default     = "false"
+# }
 
-variable "vpn_network" {
-  description = "Nom du VPC spoke pour la connexion VPN (requis si enable_vpn = true)"
-  type        = string
+# variable "vpn_network" {
+#   description = "Nom du VPC spoke pour la connexion VPN (requis si enable_vpn = true)"
+#   type        = string
+#   default     = null
+#   validation {
+#     condition     = var.enable_vpn == false || var.vpn_network != null
+#     error_message = "La variable vpn_network doit être définie quand enable_vpn est true."
+#   }
+# }
+
+variable "vpc" {
+  description = "Utilise un vpc existant via un vpc connector serverless (ipfixe non supporté)"
   default     = null
-  validation {
-    condition     = var.enable_vpn == false || var.vpn_network != null
-    error_message = "La variable vpn_network doit être définie quand enable_vpn est true."
-  }
 }
 
 variable "job_config" {

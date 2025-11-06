@@ -31,7 +31,7 @@ locals {
   image_project_id      = var.image == null ? var.project_id : split("/", var.image)[1]
   image_repository_name = var.image == null ? var.project_name : split("/", var.image)[2]
 
-  local_vpc_connector = var.ip_fixe ? {
+  vpc_connector_create = var.ip_fixe ? {
     ip_cidr_range = "10.10.10.0/28"
     name          = "vpc-con-${var.project_name}"
     network       = google_compute_network.vpc_network[0].self_link
@@ -39,10 +39,13 @@ locals {
       max = 3
       min = 2
     }
-    } : var.enable_vpn ? {
-    ip_cidr_range = "10.10.10.0/28"
-    name          = "vpc-con-${var.project_name}"
-    network       = var.vpn_network
+    } : var.vpc ? {
+    # ip_cidr_range = "10.10.10.0/28"
+    name    = "vpc-con-${var.project_name}"
+    network = var.vpc.name
+    subnet = {
+      name = keys(var.vpc.subnet_ids)[0]
+    }
     instances = {
       max = 3
       min = 2
@@ -90,10 +93,10 @@ resource "google_secret_manager_secret_iam_member" "external_secret_accessor" {
     for k, v in var.env_from_key : k => v if var.external_secret_project_id != null && var.external_secret_project_id != var.project_id
   }
 
-  project    = var.external_secret_project_id
-  secret_id  = each.value.secret_name
-  role       = "roles/secretmanager.secretAccessor"
-  member     = "serviceAccount:${google_service_account.service_account.email}"
+  project   = var.external_secret_project_id
+  secret_id = each.value.secret_name
+  role      = "roles/secretmanager.secretAccessor"
+  member    = "serviceAccount:${google_service_account.service_account.email}"
 }
 
 ####
@@ -150,7 +153,7 @@ module "google_cloud_run" {
           cpu    = var.cpu_limits
         }
       }
-      env          = var.env
+      env = var.env
       env_from_key = var.external_secret_project_id != null ? {
         for k, v in var.env_from_key : k => {
           secret  = "projects/${data.google_project.external_secret_project[0].number}/secrets/${v.secret_name}"
@@ -159,7 +162,7 @@ module "google_cloud_run" {
       } : {}
     }
   }
-  vpc_connector_create = local.local_vpc_connector
+  vpc_connector_create = local.vpc_connector_create
   revision             = local.revision_annotations
 
   job_config     = var.job_config
@@ -247,7 +250,7 @@ resource "google_project_iam_member" "run_service_agent_artifact_reader" {
   project = local.image_project_id
   role    = "roles/artifactregistry.reader"
   # L'agent de service du projet courant
-  member  = "serviceAccount:service-${data.google_project.project.number}@serverless-robot-prod.iam.gserviceaccount.com"
+  member = "serviceAccount:service-${data.google_project.project.number}@serverless-robot-prod.iam.gserviceaccount.com"
 }
 
 #---------------------------------------------------------

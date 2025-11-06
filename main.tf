@@ -36,11 +36,12 @@ locals {
       ip_cidr_range = "10.10.10.0/28"
       name          = "vpc-con-${var.project_name}"
       network       = google_compute_network.vpc_network[0].self_link
+      subnet        = null
       instances = {
         max = 3
         min = 2
       }
-    } : var.vpc != null ? {
+      } : var.vpc != null ? {
       # ip_cidr_range is not applicable for existing VPC connector, keep attribute for type consistency
       ip_cidr_range = null
       name          = "vpc-con-${var.project_name}"

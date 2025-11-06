@@ -33,6 +33,7 @@ locals {
 
   vpc_connector_create = var.ip_fixe ? {
     ip_cidr_range = "10.10.10.0/28"
+    machine_type  = "f1-micro"
     name          = "vpc-con-${var.project_name}"
     network       = google_compute_network.vpc_network[0].self_link
     subnet        = null # Pas utilisé pour ip_fixe
@@ -42,6 +43,7 @@ locals {
     }
     } : var.vpc != null ? {
     ip_cidr_range = null
+    machine_type  = "f1-micro"
     name          = "vpc-con-${var.project_name}"
     network       = null # Pas utilisé pour VPC existant
     subnet = {

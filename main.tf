@@ -45,7 +45,7 @@ locals {
     name          = "vpc-con-${var.project_name}"
     network       = null # Pas utilisé pour VPC existant
     subnet = {
-      name = split(keys(var.vpc.subnet_ids)[0], "/")[1]
+      name = split("/", keys(var.vpc.subnet_ids)[0])[1]
     }
     instances = {
       max = 3

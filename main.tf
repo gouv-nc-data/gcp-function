@@ -45,7 +45,7 @@ locals {
     name          = "vpc-con-${var.project_name}"
     network       = null # Pas utilisé pour VPC existant
     subnet = {
-      name = keys(var.vpc.subnet_ids)[0]
+      name = var.vpc.subnet_self_links[keys(var.vpc.subnet_self_links)[0]]
     }
     instances = {
       max = 3

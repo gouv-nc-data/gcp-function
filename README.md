@@ -8,6 +8,10 @@ Module terraform de création de ressources Google Cloud Function pour injection
 
 Le service account créé est de la forme `sa-${var.project_name}` et doit matcher : `^[a-z](?:[-a-z0-9]***4,28***[a-z0-9])$`
 
+# Pistes d'amélioration (TODO)
+*   **Authentification OIDC** : Migrer vers Workload Identity Federation pour GitHub Actions afin d'éliminer le stockage des clés de compte de service (`GCP_CREDENTIALS`).
+*   **Labels Standardisés** : Injecter des labels par défaut sur toutes les ressources pour faciliter le suivi analytique du Billing Google Cloud.
+
 <!-- BEGIN_TF_DOCS -->
 ## Requirements
 

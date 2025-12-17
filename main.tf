@@ -156,7 +156,9 @@ module "google_cloud_run" {
           cpu    = var.cpu_limits
         }
       }
-      env = var.env
+      env = merge({
+        GCP_PROJECT = var.project_id
+      }, var.env)
       env_from_key = var.external_secret_project_id != null ? {
         for k, v in var.env_from_key : k => {
           secret  = "projects/${data.google_project.external_secret_project[0].number}/secrets/${v.secret_name}"
@@ -234,7 +236,14 @@ resource "google_artifact_registry_repository" "project-repo" {
   repository_id = var.project_name
   description   = "docker repository for ${var.project_name}"
   format        = "DOCKER"
-  depends_on    = [google_project_service.service]
+  cleanup_policies {
+    id     = "keep-minimum-versions"
+    action = "KEEP"
+    most_recent_versions {
+      keep_count = 2
+    }
+  }
+  depends_on = [google_project_service.service]
 }
 
 resource "google_artifact_registry_repository_iam_member" "binding" {

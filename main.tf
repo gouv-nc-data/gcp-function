@@ -121,6 +121,14 @@ resource "google_storage_bucket" "bucket" {
   }
 }
 
+resource "google_storage_bucket_object" "folders" {
+  for_each = var.create_bucket ? toset(var.storage_folders) : []
+
+  name    = each.value
+  content = ""
+  bucket  = google_storage_bucket.bucket[0].name
+}
+
 ####
 # Activate services api
 ####
@@ -157,7 +165,8 @@ module "google_cloud_run" {
         }
       }
       env = merge({
-        GCP_PROJECT = var.project_id
+        GCP_PROJECT     = var.project_id
+        GCS_BUCKET_NAME = var.create_bucket ? google_storage_bucket.bucket[0].name : null
       }, var.env)
       env_from_key = var.external_secret_project_id != null ? {
         for k, v in var.env_from_key : k => {

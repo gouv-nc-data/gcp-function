@@ -194,3 +194,9 @@ variable "external_secret_project_id" {
   default     = "prj-dinum-p-secret-mgnt-aaf4"
 }
 
+variable "storage_folders" {
+  type        = list(string)
+  description = "Liste des dossiers (préfixes) à créer dans le bucket (uniquement si create_bucket est true)"
+  default     = []
+}
+

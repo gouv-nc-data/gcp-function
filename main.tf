@@ -125,7 +125,7 @@ resource "google_storage_bucket_object" "folders" {
   for_each = var.create_bucket ? toset(var.storage_folders) : []
 
   name    = each.value
-  content = ""
+  content = " "
   bucket  = google_storage_bucket.bucket[0].name
 }
 
@@ -189,6 +189,12 @@ module "google_cloud_run" {
     github_repository.function-repo[0],
     google_project_iam_member.run_service_agent_artifact_reader[0]
   ]
+}
+
+resource "google_project_service_identity" "run_identity" {
+  provider = google-beta
+  project  = var.project_id
+  service  = "run.googleapis.com"
 }
 
 # for project number
@@ -271,7 +277,7 @@ resource "google_project_iam_member" "run_service_agent_artifact_reader" {
   project = local.image_project_id
   role    = "roles/artifactregistry.reader"
   # L'agent de service du projet courant
-  member = "serviceAccount:service-${data.google_project.project.number}@serverless-robot-prod.iam.gserviceaccount.com"
+  member = "serviceAccount:${google_project_service_identity.run_identity.email}"
 }
 
 #---------------------------------------------------------

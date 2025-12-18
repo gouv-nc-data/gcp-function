@@ -124,7 +124,7 @@ resource "google_storage_bucket" "bucket" {
 resource "google_storage_bucket_object" "folders" {
   for_each = var.create_bucket ? toset(var.storage_folders) : []
 
-  name    = each.value
+  name    = endswith(each.value, "/") ? each.value : "${each.value}/"
   content = " "
   bucket  = google_storage_bucket.bucket[0].name
 }

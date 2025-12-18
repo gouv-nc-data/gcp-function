@@ -62,6 +62,7 @@ No requirements.
 | [google_service_account.service_account](https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/service_account) | resource |
 | [google_service_account_key.service_account_key](https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/service_account_key) | resource |
 | [google_storage_bucket.bucket](https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/storage_bucket) | resource |
+| [google_storage_bucket_object.folders](https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/storage_bucket_object) | resource |
 | [google_project.external_secret_project](https://registry.terraform.io/providers/hashicorp/google/latest/docs/data-sources/project) | data source |
 | [google_project.project](https://registry.terraform.io/providers/hashicorp/google/latest/docs/data-sources/project) | data source |
 
@@ -89,6 +90,7 @@ No requirements.
 | <a name="input_region"></a> [region](#input\_region) | n/a | `string` | `"europe-west1"` | no |
 | <a name="input_schedule"></a> [schedule](#input\_schedule) | expression cron de schedule du job | `string` | `null` | no |
 | <a name="input_service_config"></a> [service\_config](#input\_service\_config) | Cloud Run service specific configuration options. | <pre>object({<br/>    custom_audiences = optional(list(string), null)<br/>    eventarc_triggers = optional(<br/>      object({<br/>        audit_log = optional(map(object({<br/>          method  = string<br/>          service = string<br/>        })))<br/>        pubsub = optional(map(string))<br/>        storage = optional(map(object({<br/>          bucket = string<br/>          path   = optional(string)<br/>        })))<br/>        service_account_email = optional(string)<br/>    }), {})<br/>    gen2_execution_environment = optional(bool, false)<br/>    iap_config = optional(object({<br/>      iam          = optional(list(string), [])<br/>      iam_additive = optional(list(string), [])<br/>    }), null)<br/>    ingress              = optional(string, null) # ["INGRESS_TRAFFIC_ALL", "INGRESS_TRAFFIC_INTERNAL_ONLY","INGRESS_TRAFFIC_INTERNAL_LOAD_BALANCER"]<br/>    invoker_iam_disabled = optional(bool, false)<br/>    max_concurrency      = optional(number)<br/>    scaling = optional(object({<br/>      max_instance_count = optional(number)<br/>      min_instance_count = optional(number)<br/>    }))<br/>    timeout = optional(string)<br/>  })</pre> | `{}` | no |
+| <a name="input_storage_folders"></a> [storage\_folders](#input\_storage\_folders) | Liste des dossiers (préfixes) à créer dans le bucket (uniquement si create\_bucket est true) | `list(string)` | `[]` | no |
 | <a name="input_timeout_seconds"></a> [timeout\_seconds](#input\_timeout\_seconds) | timeout d'execution de la fonction | `number` | `300` | no |
 | <a name="input_type"></a> [type](#input\_type) | Deploiement en mode service ou job (par défaut) | `string` | `"JOB"` | no |
 | <a name="input_vpc"></a> [vpc](#input\_vpc) | Utilise un vpc existant via un vpc connector serverless (ipfixe non supporté) | `any` | `null` | no |

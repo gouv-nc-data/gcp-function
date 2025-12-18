@@ -71,6 +71,8 @@ No requirements.
 
 | Name | Description | Type | Default | Required |
 |------|-------------|------|---------|:--------:|
+| <a name="input_bucket_lifecycle_rules"></a> [bucket\_lifecycle\_rules](#input\_bucket\_lifecycle\_rules) | Liste des règles de cycle de vie pour le bucket | <pre>list(object({<br/>    action    = any<br/>    condition = any<br/>  }))</pre> | `[]` | no |
+| <a name="input_bucket_versioning_enabled"></a> [bucket\_versioning\_enabled](#input\_bucket\_versioning\_enabled) | Active le versionnement sur le bucket | `bool` | `false` | no |
 | <a name="input_cpu_limits"></a> [cpu\_limits](#input\_cpu\_limits) | cpu maximal alloué au container https://cloud.google.com/run/docs/configuring/cpu?hl=fr | `string` | `"1000m"` | no |
 | <a name="input_create_bucket"></a> [create\_bucket](#input\_create\_bucket) | Création ou non d'un bucket associé au projet | `bool` | `true` | no |
 | <a name="input_direction"></a> [direction](#input\_direction) | direction du projet | `string` | n/a | yes |

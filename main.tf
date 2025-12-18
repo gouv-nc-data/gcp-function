@@ -114,10 +114,30 @@ resource "google_storage_bucket" "bucket" {
   location                    = var.region
   storage_class               = "REGIONAL"
   uniform_bucket_level_access = true
-  lifecycle {
-    ignore_changes = [
-      lifecycle_rule,
-    ]
+
+  versioning {
+    enabled = var.bucket_versioning_enabled
+  }
+
+  dynamic "lifecycle_rule" {
+    for_each = var.bucket_lifecycle_rules
+    content {
+      action {
+        type          = lifecycle_rule.value.action.type
+        storage_class = try(lifecycle_rule.value.action.storage_class, null)
+      }
+      condition {
+        age                        = try(lifecycle_rule.value.condition.age, null)
+        created_before             = try(lifecycle_rule.value.condition.created_before, null)
+        with_state                 = try(lifecycle_rule.value.condition.with_state, null)
+        matches_storage_class      = try(lifecycle_rule.value.condition.matches_storage_class, null)
+        num_newer_versions         = try(lifecycle_rule.value.condition.num_newer_versions, null)
+        days_since_custom_time     = try(lifecycle_rule.value.condition.days_since_custom_time, null)
+        custom_time_before         = try(lifecycle_rule.value.condition.custom_time_before, null)
+        days_since_noncurrent_time = try(lifecycle_rule.value.condition.days_since_noncurrent_time, null)
+        noncurrent_time_before     = try(lifecycle_rule.value.condition.noncurrent_time_before, null)
+      }
+    }
   }
 }
 

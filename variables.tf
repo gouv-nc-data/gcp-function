@@ -200,3 +200,18 @@ variable "storage_folders" {
   default     = []
 }
 
+variable "bucket_versioning_enabled" {
+  type        = bool
+  default     = false
+  description = "Active le versionnement sur le bucket"
+}
+
+variable "bucket_lifecycle_rules" {
+  description = "Liste des règles de cycle de vie pour le bucket"
+  type = list(object({
+    action    = any
+    condition = any
+  }))
+  default = []
+}
+

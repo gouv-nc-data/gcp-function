@@ -55,12 +55,6 @@ variable "schedule" {
   default     = null
 }
 
-variable "timeout_seconds" {
-  type        = number
-  description = "timeout d'execution de la fonction"
-  default     = 300
-}
-
 variable "notification_channels" {
   type        = list(string)
   description = "canal de notification pour les alertes sur cloud run"

@@ -55,6 +55,18 @@ variable "schedule" {
   default     = null
 }
 
+variable "attempt_deadline" {
+  type        = string
+  description = "délai au-delà duquel Cloud Scheduler considère l'appel en échec. Doit couvrir la durée d'exécution réelle, sinon le job est rejoué alors qu'il tourne encore"
+  default     = "320s"
+}
+
+variable "retry_count" {
+  type        = number
+  description = "nombre de rejeux déclenchés par Cloud Scheduler lorsqu'un appel est considéré en échec"
+  default     = 1
+}
+
 variable "notification_channels" {
   type        = list(string)
   description = "canal de notification pour les alertes sur cloud run"

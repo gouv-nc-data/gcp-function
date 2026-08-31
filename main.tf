@@ -231,11 +231,11 @@ resource "google_cloud_scheduler_job" "schedule_job_or_svc" {
   description      = "Schedule du ${local.create_job ? "job" : "service"} pour ${var.project_name} en ${var.schedule}]"
   schedule         = var.schedule
   time_zone        = "Pacific/Noumea"
-  attempt_deadline = "320s"
+  attempt_deadline = var.attempt_deadline
   region           = var.region
 
   retry_config {
-    retry_count = 1
+    retry_count = var.retry_count
   }
 
   http_target {

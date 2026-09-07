@@ -418,10 +418,20 @@ resource "google_monitoring_alert_policy" "errors" {
   display_name = "Errors in logs alert policy on ${var.project_name}"
   project      = var.project_id
   combiner     = "OR"
+  # sans ça les notifications s'affichent en "[ALERT - No severity]"
+  severity = "ERROR"
   conditions {
     display_name = "Error condition"
     condition_matched_log {
-      filter = "severity=ERROR ${local.create_job ? format("resource.labels.job_name=%s", module.google_cloud_run.job.name) : format("resource.labels.service_name=%s", module.google_cloud_run.service_name)}"
+      # resource.type cadre le filtre : sans lui un log ERROR d'une autre
+      # ressource portant le même label service_name/job_name déclenche l'alerte
+      filter = join(" ", [
+        format("resource.type=%q", local.create_job ? "cloud_run_job" : "cloud_run_revision"),
+        "severity=ERROR",
+        local.create_job
+        ? format("resource.labels.job_name=%q", module.google_cloud_run.job.name)
+        : format("resource.labels.service_name=%q", module.google_cloud_run.service_name),
+      ])
     }
   }
 
